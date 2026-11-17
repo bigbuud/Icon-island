@@ -33,7 +33,7 @@ IconIsland.theme({
     }
     trees.sort((a, b) => a.y - b.y);
     this._trees = trees;
-    this._shrooms = Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H, z: 0.8 + r() * 0.6, n: 1 + Math.floor(r() * 3), o: r() * 6 }));
+    this._shrooms = Array.from({ length: 260 }, () => ({ x: r() * W, y: r() * H, z: 0.8 + r() * 0.6, n: 1 + Math.floor(r() * 3), o: r() * 6 }));
     this._leaves = Array.from({ length: 30 }, () => ({ x: r() * W, y: r() * H, ph: r() * 6.28, z: 3 + r() * 3, c: Math.floor(r() * 4), vy: 20 + r() * 22 }));
     this._flies = [{ x: W * 0.4, y: H * 0.5, o: 0 }, { x: W * 0.6, y: H * 0.4, o: 2.4 }];
     this._seed = seed; this._key = ''; this._herd = new Fauna.Herd();
@@ -160,6 +160,8 @@ IconIsland.theme({
       ctx.fillStyle = gr; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
     }
 
+    this._mushrooms(ctx, env, SE);
+
     // bomen: de kronen gaan op halve framerate naar een tussenlaag (goedkoop op core-GPU), die elke frame wordt getoond
     const k = 1 - Math.exp(-dt * 4 * 2), dens = P.density, n = icons.length;
     const L = this._layer && this._layer.width === env.cv.width && this._layer.height === env.cv.height ? this._layer : (this._layer = (() => { const c = document.createElement('canvas'); c.width = env.cv.width; c.height = env.cv.height; return c; })());
@@ -202,6 +204,25 @@ IconIsland.theme({
     herd.draw(ctx, t);
   },
 
+  _mushrooms(ctx, env, SE) {
+    const { W, H, P, S } = env, icons = env.icons, clamp = env.clamp, sm = env.smooth, n = icons.length;
+    // paddenstoelen aan de rand van een open plek
+    if (n) for (const m of this._shrooms) {
+      const d = env.dist(m.x, m.y), al = sm(clamp((d - 26) / 20, 0, 1)) * (1 - sm(clamp((d - 70) / 50, 0, 1)));
+      if (al < 0.03) continue;
+      ctx.globalAlpha = al;
+      for (let i = 0; i < m.n; i++) {
+        const x = m.x + i * 8 - 4, y = m.y + (i % 2) * 4, z = m.z * (1 - i * 0.18);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(x + 2, y + 1.5, 5 * z, 2 * z, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#efe6cf'; ctx.fillRect(x - 1.3 * z, y - 5 * z, 2.6 * z, 5 * z);
+        ctx.fillStyle = SE.cap; ctx.beginPath(); ctx.ellipse(x, y - 5 * z, 5.2 * z, 3.8 * z, 0, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x - 2.2 * z, y - 7.2 * z, 1.4 * z, 1.4 * z); ctx.fillRect(x + 1 * z, y - 6.2 * z, 1.2 * z, 1.2 * z);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+  },
+
   _drawTrees(ctx, env, wt, amp, k, dens, n) {
     const { W, H, P, S } = env, icons = env.icons, clamp = env.clamp, sm = env.smooth;
     for (const tr of this._trees) {
@@ -228,21 +249,6 @@ IconIsland.theme({
 
   _after(ctx, t, dt, env, SE) {
     const { W, H, P, S } = env, icons = env.icons, clamp = env.clamp, sm = env.smooth, n = icons.length;
-
-    // paddenstoelen aan de rand van een open plek
-    if (n) for (const m of this._shrooms) {
-      const d = env.dist(m.x, m.y), al = sm(clamp((d - 26) / 20, 0, 1)) * (1 - sm(clamp((d - 70) / 50, 0, 1)));
-      if (al < 0.03) continue;
-      ctx.globalAlpha = al;
-      for (let i = 0; i < m.n; i++) {
-        const x = m.x + i * 8 - 4, y = m.y + (i % 2) * 4, z = m.z * (1 - i * 0.18);
-        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(x + 2, y + 1.5, 5 * z, 2 * z, 0, 0, 7); ctx.fill();
-        ctx.fillStyle = '#efe6cf'; ctx.fillRect(x - 1.3 * z, y - 5 * z, 2.6 * z, 5 * z);
-        ctx.fillStyle = SE.cap; ctx.beginPath(); ctx.ellipse(x, y - 5 * z, 5.2 * z, 3.8 * z, 0, Math.PI, 0); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x - 2.2 * z, y - 7.2 * z, 1.4 * z, 1.4 * z); ctx.fillRect(x + 1 * z, y - 6.2 * z, 1.2 * z, 1.2 * z);
-      }
-    }
-    ctx.globalAlpha = 1;
 
     // vlinders
     for (let i = 0; i < this._flies.length; i++) {

@@ -3,7 +3,8 @@
 // Techniek: statische hemel in een cache-canvas; per frame worden alle wolkenbolletjes (iconen + drijvers)
 // verzameld en in drie lagen getekend (schaduw, lichte rand, lichaam), elk met één gevuld pad -> goedkoop en samensmeltend.
 IconIsland.theme({
-  params: { time: 0, cover: 0.35, flow: 1 },
+  params: { time: 0, cover: 0.35, flow: 1, life: 1 },
+  _plane: null, _planeT: 14, _flocks: [], _birdT: 3,
 
   _bg: null, _stars: [], _amb: [], _seed: 1,
   PAL: [
@@ -105,6 +106,69 @@ IconIsland.theme({
       layer(pal.shade, 0, 5, 1.5);
       layer(pal.rim, 0, -3, 0);
       layer(pal.cloud, 0, 0, 0);
+    }
+    if (P.life >= 1) this._life(ctx, t, dt, env, tm);
+    else { this._plane = null; this._flocks.length = 0; }
+  },
+
+  // an airliner with a contrail now and then, and flocks of birds gliding through (no birds at night)
+  _life(ctx, t, dt, env, tm) {
+    const { W, H } = env, R = Math.random;
+    this._planeT -= dt; this._birdT -= dt;
+    if (!this._plane && this._planeT <= 0) {
+      const dir = R() < 0.5 ? 1 : -1, y0 = H * (0.1 + R() * 0.55);
+      this._plane = { x: dir > 0 ? -380 : W + 380, y: y0, dir, vy: (R() - 0.5) * 14, v: 80 + R() * 30, trail: [] };
+    }
+    if (tm !== 2 && this._birdT <= 0 && this._flocks.length < 3) {
+      this._birdT = 10 + R() * 25;
+      const dir = R() < 0.5 ? 1 : -1, n = R() < 0.3 ? 1 : 3 + Math.floor(R() * 5), y0 = H * (0.08 + R() * 0.7);
+      this._flocks.push({ x: dir > 0 ? -80 : W + 80, y: y0, dir, v: 30 + R() * 30, vy: (R() - 0.5) * 8, ph: R() * 6, n, sc: 1.2 + R() * 0.8 });
+    }
+    // birds
+    const ink = tm === 1 ? 'rgba(60,25,70,0.85)' : 'rgba(35,52,80,0.8)';
+    ctx.strokeStyle = ink; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let f = this._flocks.length - 1; f >= 0; f--) {
+      const fl = this._flocks[f];
+      fl.x += fl.v * fl.dir * dt; fl.y += fl.vy * dt;
+      if ((fl.dir > 0 && fl.x > W + 120) || (fl.dir < 0 && fl.x < -120)) { this._flocks.splice(f, 1); continue; }
+      for (let i = 0; i < fl.n; i++) {
+        const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1, bx = fl.x - fl.dir * row * 22 * fl.sc, by = fl.y + (i ? side * row * 12 * fl.sc : 0) + Math.sin(t * 0.7 + i + fl.ph) * 3;
+        const flap = Math.sin(t * 5.5 + i * 0.9 + fl.ph), w = 9 * fl.sc, up = flap * 5 * fl.sc;
+        ctx.lineWidth = 1.8 * fl.sc;
+        ctx.beginPath(); ctx.moveTo(bx - w, by - up * 0.5 - 1); ctx.quadraticCurveTo(bx - w * 0.45, by - up - 3 * fl.sc, bx, by); ctx.quadraticCurveTo(bx + w * 0.45, by - up - 3 * fl.sc, bx + w, by - up * 0.5 - 1); ctx.stroke();
+      }
+    }
+    // airliner
+    const pl = this._plane;
+    if (pl) {
+      pl.x += pl.v * pl.dir * dt; pl.y += pl.vy * dt;
+      pl.trail.push([pl.x, pl.y]); if (pl.trail.length > 260) pl.trail.shift();
+      if ((pl.dir > 0 && pl.x > W + 420) || (pl.dir < 0 && pl.x < -420)) { this._plane = null; this._planeT = 45 + R() * 60; return; }
+      const a = tm === 2 ? 0.28 : tm === 1 ? 0.55 : 0.7, tr = pl.trail;
+      if (tr.length > 3) {
+        const g = ctx.createLinearGradient(tr[0][0], tr[0][1], pl.x, pl.y);
+        g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, tm === 1 ? `rgba(255,225,205,${a})` : `rgba(255,255,255,${a})`);
+        ctx.strokeStyle = g; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] - 1.5); for (const p of tr) ctx.lineTo(p[0], p[1] - 1.5); ctx.stroke();
+        ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] + 1.5); for (const p of tr) ctx.lineTo(p[0], p[1] + 1.5); ctx.stroke();
+      }
+      ctx.save(); ctx.translate(pl.x, pl.y); ctx.scale(pl.dir * 1.5, 1.5); ctx.rotate(Math.atan2(pl.vy, pl.v) * 0.6);
+      const body = tm === 2 ? '#8e9cc4' : tm === 1 ? '#f0d4c8' : '#fbfcff', wing = tm === 2 ? '#6f7fae' : tm === 1 ? '#d9b0a6' : '#dfe8f4';
+      ctx.fillStyle = 'rgba(10,30,70,0.18)'; ctx.beginPath(); ctx.ellipse(3, 7, 30, 3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = wing;                                                       // wings (seen from slightly below / side), swept back
+      ctx.beginPath(); ctx.moveTo(6, -1); ctx.lineTo(-12, -17); ctx.lineTo(-19, -17); ctx.lineTo(-7, -1); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(6, 1); ctx.lineTo(-12, 15); ctx.lineTo(-19, 15); ctx.lineTo(-7, 1); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-26, -1); ctx.lineTo(-33, -9); ctx.lineTo(-37, -9); ctx.lineTo(-32, -1); ctx.closePath(); ctx.fill();   // tailplane
+      ctx.beginPath(); ctx.moveTo(-26, 1); ctx.lineTo(-33, 8); ctx.lineTo(-37, 8); ctx.lineTo(-32, 1); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(0, 0, 32, 4.2, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = tm === 2 ? '#5b6a9a' : '#2f6fc0'; ctx.beginPath(); ctx.ellipse(27, -0.3, 6, 2.2, 0, 0, 7); ctx.fill(); ctx.fillRect(-30, -1, 12, 2);
+      ctx.fillStyle = '#6d7a90'; ctx.beginPath(); ctx.ellipse(-4, -9, 4, 1.8, 0, 0, 7); ctx.ellipse(-4, 9, 4, 1.8, 0, 0, 7); ctx.fill();
+      if (tm !== 0) {                                                             // navigation lights
+        const on = Math.sin(t * 7) > 0.7;
+        ctx.fillStyle = '#ff4040'; ctx.beginPath(); ctx.arc(-17, -17, 1.6, 0, 7); ctx.fill();
+        ctx.fillStyle = '#3cff80'; ctx.beginPath(); ctx.arc(-17, 15, 1.6, 0, 7); ctx.fill();
+        if (on) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-34, 0, 2.4, 0, 7); ctx.fill(); }
+      }
+      ctx.restore();
     }
   },
 });

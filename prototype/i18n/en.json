@@ -262,6 +262,14 @@
         "flow": {
           "label": "Drift speed",
           "hint": "How fast the clouds drift"
+        },
+        "life": {
+          "label": "Planes & birds",
+          "hint": "An airliner and flocks of birds passing now and then",
+          "options": [
+            "Off",
+            "On"
+          ]
         }
       }
     },

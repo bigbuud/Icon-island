@@ -287,6 +287,16 @@
               "step": 0.05,
               "default": 1,
               "format": "times"
+            },
+            {
+              "key": "life",
+              "label": "Planes & birds",
+              "hint": "An airliner and flocks of birds passing now and then",
+              "options": [
+                "Off",
+                "On"
+              ],
+              "default": 1
             }
           ]
         }
@@ -343,7 +353,7 @@
           ]
         }
       ],
-      "thumb": "url(thumbs/pasture-open.webp?v=4) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)"
+      "thumb": "url(thumbs/pasture-open.webp?v=5) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)"
     },
     {
       "id": "forest",
@@ -353,7 +363,7 @@
       "page": "forest.html",
       "status": "ready",
       "product": "free",
-      "thumb": "url(thumbs/forest-open.webp?v=2) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)",
+      "thumb": "url(thumbs/forest-open.webp?v=5) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)",
       "thumbSource": "custom",
       "groups": [
         {

@@ -27,7 +27,7 @@ IconIsland.theme({
     // ---- surrounding countryside: big organic fields (meadow, wheat, crop rows) with bush hedges, paths, ponds, trees, farm buildings
     const sc = 2, lw = Math.ceil(W / sc) + 2, lh = Math.ceil(H / sc) + 2, small = mk(lw, lh), sg = small.getContext('2d'), img = sg.createImageData(lw, lh), u = new Uint32Array(img.data.buffer);
     const meadow = [[140, 198, 90], [124, 189, 78], [148, 204, 98], [132, 194, 84]];
-    const ids = new Int32Array(lw * lh), typ = new Uint8Array(lw * lh), hedgePts = new Map(), obst = [];
+    const ids = new Int32Array(lw * lh), typ = new Uint8Array(lw * lh), fk = new Uint8Array(lw * lh), hedgePts = new Map(), obst = [];
     for (let j = 0; j < lh; j++) for (let i = 0; i < lw; i++) {
       const x = i * sc, y = j * sc, wx = x + (env.noise(x / 230, y / 230, seed + 2) - 0.5) * 230, wy = y + (env.noise(x / 230 + 9, y / 230, seed + 3) - 0.5) * 230;
       ids[j * lw + i] = (Math.floor(wx / 330) * 73856093) ^ (Math.floor(wy / 240) * 19349663);
@@ -35,14 +35,14 @@ IconIsland.theme({
     for (let j = 0; j < lh; j++) for (let i = 0; i < lw; i++) {
       const k = j * lw + i, id = ids[k], h = env.hash(id, id >> 3, seed), x = i * sc, y = j * sc;
       let R, G, B, sh = 1 + (env.fbm(x / 110, y / 110, seed + 6, 3) - 0.5) * 0.14;
-      typ[k] = (h < 0.5 || h > 0.9) ? 1 : 0;
+      typ[k] = (h < 0.5 || h > 0.9) ? 1 : 0; fk[k] = typ[k] ? 1 : h < 0.72 ? 2 : 3;
       const ang = h * 3.14 + 0.3, along = x * Math.cos(ang) + y * Math.sin(ang);
       if (h < 0.5 || h > 0.9) { const m = meadow[Math.floor(h * 977) % 4]; [R, G, B] = m; sh += Math.sin(along / 9) * 0.012; }
       else if (h < 0.72) { const st = Math.sin(along / 2.1) * 0.5 + 0.5; [R, G, B] = [232 - st * 20, 188 - st * 20, 76 - st * 12]; sh += (env.noise(x / 40, y / 40, seed + 8) - 0.5) * 0.1; }
       else { const st = Math.sin(along / 3.2) * 0.5 + 0.5; [R, G, B] = [118 + st * 30, 176 + st * 24, 62 + st * 14]; }
       u[k] = 255 << 24 | Math.min(255, B * sh) << 16 | Math.min(255, G * sh) << 8 | Math.min(255, R * sh);
       const edge = (i + 1 < lw && ids[k + 1] !== id) || (j + 1 < lh && ids[k + lw] !== id);
-      if (edge && ((id >> 2) & 3) !== 0) { const key = Math.floor(x / 9) + ',' + Math.floor(y / 9); if (!hedgePts.has(key)) hedgePts.set(key, [x, y]); }
+      if (edge && ((id >> 2) & 3) !== 0) { const key = Math.floor(x / 9) + ',' + Math.floor(y / 9); if (!hedgePts.has(key)) hedgePts.set(key, [x, y, (id >> 2) & 3]); }
     }
     sg.putImageData(img, 0, 0);
     const bg = mk(cw, ch), b = bg.getContext('2d'); b.scale(S, S); b.imageSmoothingEnabled = true; b.drawImage(small, 0, 0, lw * sc, lh * sc);
@@ -51,33 +51,92 @@ IconIsland.theme({
       const g = b.createRadialGradient(x - z * 0.35, y - z * 0.35, 0.5, x, y, z);
       g.addColorStop(0, dark ? '#5aa03c' : '#8ccc58'); g.addColorStop(1, dark ? '#2d6a2c' : '#3f8a36'); b.fillStyle = g; b.beginPath(); b.arc(x, y, z, 0, 7); b.fill();
     };
-    // winding dirt paths
-    for (let q = 0; q < 2; q++) {
-      const y0 = H * (0.3 + q * 0.4) + r() * 60, ph = r() * 6, pts = [];
-      for (let x = -20; x <= W + 20; x += 14) pts.push([x, y0 + Math.sin(x / 280 + ph) * 90 + (env.noise(x / 90, q, seed + 31) - 0.5) * 50]);
+    // --- winding dirt roads (two across, one down); everything else is placed relative to them
+    const paths = [];
+    for (let q = 0; q < 3; q++) {
+      const pts = [], ph = r() * 6, vert = q === 2, base = vert ? W * (0.3 + r() * 0.4) : H * (0.25 + q * 0.42) + r() * 50;
+      for (let t = -20; t <= (vert ? H : W) + 20; t += 12) { const w = Math.sin(t / 260 + ph) * 80 + (env.noise(t / 90, q, seed + 31) - 0.5) * 50; pts.push(vert ? [base + w, t] : [t, base + w]); }
+      paths.push(pts);
+    }
+    const dPath = (x, y) => { let m = 1e9; for (const pts of paths) for (const p of pts) { const d = Math.abs(p[0] - x) + Math.abs(p[1] - y); if (d < m * 1.5) { const e = Math.hypot(p[0] - x, p[1] - y); if (e < m) m = e; } } return m; };
+    const road = (pts, wdt) => {
       const tr = (dx, dy) => { b.beginPath(); pts.forEach((p, i) => i ? b.lineTo(p[0] + dx, p[1] + dy) : b.moveTo(p[0] + dx, p[1] + dy)); };
       b.lineCap = 'round'; b.lineJoin = 'round';
-      tr(1.5, 2); b.strokeStyle = 'rgba(40,60,20,0.22)'; b.lineWidth = 11; b.stroke();
-      tr(0, 0); b.strokeStyle = '#c9b383'; b.lineWidth = 10; b.stroke(); tr(0, -0.5); b.strokeStyle = '#e6d6a8'; b.lineWidth = 6.5; b.stroke();
+      tr(1.5, 2); b.strokeStyle = 'rgba(40,60,20,0.22)'; b.lineWidth = wdt + 1; b.stroke();
+      tr(0, 0); b.strokeStyle = '#c9b383'; b.lineWidth = wdt; b.stroke(); tr(0, -0.5); b.strokeStyle = '#e6d6a8'; b.lineWidth = wdt * 0.62; b.stroke();
+    };
+    for (const pts of paths) road(pts, 10);
+    // --- farms right next to a road: yard, house, barn, footpath to the door, a couple of trees
+    const farms = [], extraTrees = [];
+    for (let i = 0, n = Math.round(W * H / 700000) + 1, tries = 0; i < n && tries < 40; tries++) {
+      const pts = paths[Math.floor(r() * paths.length)], ix = 6 + Math.floor(r() * (pts.length - 12)), q = pts[ix], tg = [pts[ix + 2][0] - pts[ix - 2][0], pts[ix + 2][1] - pts[ix - 2][1]], tl = Math.hypot(tg[0], tg[1]) || 1;
+      const tx = tg[0] / tl, ty = tg[1] / tl, side = r() < 0.5 ? 1 : -1, nx = -ty * side, ny = tx * side, d = 42 + r() * 8, hx = q[0] + nx * d, hy = q[1] + ny * d;
+      if (hx < 90 || hy < 70 || hx > W - 90 || hy > H - 70 || farms.some(f => Math.hypot(f.x - hx, f.y - hy) < 230)) continue;
+      farms.push({ x: hx, y: hy, tx, ty, nx, ny, q, d }); i++;
     }
-    hedgePts.forEach(p => { const z = 5 + r() * 4; bush(p[0] + (r() - 0.5) * 3, p[1] + (r() - 0.5) * 3, z, r() < 0.4); if (r() < 0.5) bush(p[0] + 4 + r() * 4, p[1] + 3 + r() * 4, 4 + r() * 3, r() < 0.4); });
-    for (let i = 0, n = Math.round(W * H / 700000) + 1; i < n; i++) {                 // ponds
-      const x = r() * W, y = r() * H, rx = 36 + r() * 30, ry = rx * (0.55 + r() * 0.2);
+    for (const f of farms) {
+      const ang = Math.atan2(f.ty, f.tx);
+      b.save(); b.translate(f.x, f.y); b.rotate(ang);
+      b.fillStyle = 'rgba(190,170,110,0.55)'; b.beginPath(); b.ellipse(25, 0, 82, 46, 0, 0, 7); b.fill();             // yard
+      b.restore();
+      road([[f.q[0], f.q[1]], [f.q[0] + f.nx * f.d * 0.5, f.q[1] + f.ny * f.d * 0.5], [f.x - f.nx * 14, f.y - f.ny * 14]], 5);   // footpath from the road to the door
+      const bld = (ox, w2, h2, roof, chim) => {
+        b.save(); b.translate(f.x, f.y); b.rotate(ang); b.translate(ox, 0);
+        b.fillStyle = 'rgba(20,40,10,0.3)'; b.fillRect(-w2 / 2 + 5, -h2 / 2 + 7, w2, h2);
+        b.fillStyle = roof; b.fillRect(-w2 / 2, -h2 / 2, w2, h2);
+        b.fillStyle = 'rgba(0,0,0,0.2)'; b.fillRect(-w2 / 2, 0, w2, h2 / 2);
+        b.fillStyle = 'rgba(255,255,255,0.22)'; b.fillRect(-w2 / 2, -h2 / 2, w2, 3);
+        b.strokeStyle = 'rgba(70,20,12,0.7)'; b.lineWidth = 1.2; b.beginPath(); b.moveTo(-w2 / 2, 0); b.lineTo(w2 / 2, 0); b.stroke();
+        if (chim) { b.fillStyle = '#efe6d0'; b.fillRect(w2 / 2 - 14, -h2 / 2 + 3, 7, 7); }
+        b.restore();
+      };
+      bld(0, 50 + r() * 10, 30, '#c8553a', true); bld(66, 46, 34, '#a8412e', false);
+      obst.push([f.x, f.y, 44], [f.x + f.tx * 66, f.y + f.ty * 66, 40]);
+      for (let k = 0; k < 2; k++) extraTrees.push([f.x - f.nx * (34 + k * 12) + f.tx * (-50 + k * 120), f.y - f.ny * (34 + k * 12) + f.ty * (-50 + k * 120), 24 + r() * 8]);
+    }
+    // --- ponds: clear of roads, farms and each other
+    const ponds = [];
+    for (let i = 0, n = Math.round(W * H / 700000) + 1, tries = 0; i < n && tries < 80; tries++) {
+      const x = 80 + r() * (W - 160), y = 80 + r() * (H - 160), rx = 34 + r() * 26, ry = rx * (0.55 + r() * 0.2), rr2 = rx + 14;
+      if (dPath(x, y) < rr2 + 6 || farms.some(f => Math.hypot(f.x - x, f.y - y) < rr2 + 120) || ponds.some(p => Math.hypot(p[0] - x, p[1] - y) < p[2] + rr2 + 30)) continue;
+      ponds.push([x, y, rr2]); i++;
       obst.push([x, y, rx + 12]);
       b.fillStyle = '#7fae5a'; b.beginPath(); b.ellipse(x, y, rx + 5, ry + 5, 0, 0, 7); b.fill();
       const g = b.createLinearGradient(x - rx, y - ry, x + rx, y + ry); g.addColorStop(0, '#9ad0d6'); g.addColorStop(1, '#4f95a8'); b.fillStyle = g; b.beginPath(); b.ellipse(x, y, rx, ry, 0, 0, 7); b.fill();
       b.strokeStyle = 'rgba(255,255,255,0.35)'; b.lineWidth = 1.5; b.beginPath(); b.ellipse(x - 4, y - 3, rx * 0.55, ry * 0.4, 0, 3.6, 5.3); b.stroke();
       for (let q = 0; q < 5; q++) bush(x + (r() - 0.5) * rx * 2.1, y + ry * (r() < 0.5 ? 1 : -1) * 1.05, 3 + r() * 3, true);
     }
-    for (let i = 0, n = Math.round(W * H / 900000) + 1; i < n; i++) {                 // farm buildings
-      const x = 60 + r() * (W - 120), y = 60 + r() * (H - 120), w = 40 + r() * 16, h = 26 + r() * 10, barn = r() < 0.5, roof = barn ? '#b8402e' : '#c8553a';
-      obst.push([x, y, w * 0.6 + 12]);
-      b.fillStyle = 'rgba(20,40,10,0.3)'; b.fillRect(x - w / 2 + 5, y - h / 2 + 7, w, h);
-      b.fillStyle = roof; b.fillRect(x - w / 2, y - h / 2, w, h);
-      b.fillStyle = 'rgba(0,0,0,0.18)'; b.fillRect(x - w / 2, y, w, h / 2);
-      b.fillStyle = 'rgba(255,255,255,0.25)'; b.fillRect(x - w / 2, y - h / 2, w, 3);
-      b.strokeStyle = '#8c2e20'; b.lineWidth = 1.2; b.beginPath(); b.moveTo(x - w / 2, y); b.lineTo(x + w / 2, y); b.stroke();
-      if (!barn) { b.fillStyle = '#efe6d0'; b.fillRect(x + w / 2 - 12, y - h / 2 - 8, 12, 8); b.fillStyle = '#a8503a'; b.fillRect(x + w / 2 - 12, y - h / 2 - 10, 12, 3); }
+    // --- field borders: hedges or wooden fences (some none); never over roads, ponds or farms; gaps at roads
+    const blocked = (x, y) => dPath(x, y) < 12 || ponds.some(p => Math.hypot(p[0] - x, p[1] - y) < p[2] - 2) || farms.some(f => Math.hypot(f.x - x, f.y - y) < 95);
+    const fenceKeys = new Map();
+    hedgePts.forEach((p, key) => {
+      if (blocked(p[0], p[1])) return;
+      if (p[2] === 1) { fenceKeys.set(key, p); return; }
+      const z = 5 + r() * 4; bush(p[0] + (r() - 0.5) * 3, p[1] + (r() - 0.5) * 3, z, r() < 0.4); if (r() < 0.5) bush(p[0] + 4 + r() * 4, p[1] + 3 + r() * 4, 4 + r() * 3, r() < 0.4);
+    });
+    b.lineCap = 'round';
+    fenceKeys.forEach((p, key) => {
+      const [bx, by] = key.split(',').map(Number);
+      for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+        const q = fenceKeys.get((bx + dx) + ',' + (by + dy)); if (!q) continue;
+        b.strokeStyle = 'rgba(30,50,15,0.25)'; b.lineWidth = 2.6; b.beginPath(); b.moveTo(p[0] + 1.5, p[1] + 2); b.lineTo(q[0] + 1.5, q[1] + 2); b.stroke();
+        b.strokeStyle = '#a9824f'; b.lineWidth = 1.8; b.beginPath(); b.moveTo(p[0], p[1]); b.lineTo(q[0], q[1]); b.stroke();
+      }
+    });
+    fenceKeys.forEach((p, key) => { const [bx, by] = key.split(',').map(Number); if ((bx + by) % 2) return; b.fillStyle = '#6e4c2a'; b.beginPath(); b.arc(p[0], p[1], 2.3, 0, 7); b.fill(); b.fillStyle = '#c9a06a'; b.beginPath(); b.arc(p[0] - 0.5, p[1] - 0.5, 1, 0, 7); b.fill(); });
+    // --- round hay bales in the wheat fields
+    const atF = (x, y) => Math.min(lh - 1, Math.max(0, Math.round(y / sc))) * lw + Math.min(lw - 1, Math.max(0, Math.round(x / sc)));
+    for (let i = 0, n = W * H / 120000, tries = 0; i < n && tries < 200; tries++) {
+      const x = r() * W, y = r() * H, k0 = atF(x, y);
+      if (fk[k0] !== 2 || dPath(x, y) < 20 || [[16, 0], [-16, 0], [0, 16], [0, -16]].some(o => ids[atF(x + o[0] * 2, y + o[1] * 2)] !== ids[k0])) continue;
+      i++;
+      const m = 2 + Math.floor(r() * 3), ang = r() * 3.14;
+      for (let q = 0; q < m; q++) {
+        const bx2 = x + Math.cos(ang) * q * 17, by2 = y + Math.sin(ang) * q * 17;
+        b.fillStyle = 'rgba(60,40,10,0.3)'; b.beginPath(); b.ellipse(bx2 + 3, by2 + 4, 8, 7, 0, 0, 7); b.fill();
+        const g = b.createRadialGradient(bx2 - 2, by2 - 2, 1, bx2, by2, 8); g.addColorStop(0, '#f3d27a'); g.addColorStop(1, '#c79a38'); b.fillStyle = g; b.beginPath(); b.arc(bx2, by2, 8, 0, 7); b.fill();
+        b.strokeStyle = 'rgba(140,100,20,0.6)'; b.lineWidth = 0.9; b.beginPath(); b.arc(bx2, by2, 5, 0.5, 5); b.stroke(); b.beginPath(); b.arc(bx2, by2, 2.4, 1, 6); b.stroke();
+      }
     }
     // trees: layered lobed crowns (oak, light, blossom) and spiky conifers, as single trees and small copses
     const TS = 1.5, SZ = 120, spr = [];
@@ -113,18 +172,22 @@ IconIsland.theme({
       }
       c.globalAlpha = 1; return cs;
     };
-    const kinds = ['oak', 'oak', 'oak', 'oak', 'light', 'light', 'conifer', 'conifer', 'blossom'];
+    const kinds = ['oak', 'oak', 'oak', 'oak', 'light', 'light', 'oak', 'blossom'];
     kinds.forEach((k, i) => spr.push(mkTree(k, i)));
     const stamp = (x, y, z) => {
       const sp = spr[Math.floor(r() * spr.length)], sc2 = z / 40;
       b.drawImage(sp, (x - 56 * sc2), (y - 54 * sc2), SZ * sc2, SZ * sc2);
     };
-    const treeList = [];
+    let treeList = [];
     for (let i = 0, n = W * H / 52000; i < n; i++) { const x = r() * W, y = r() * H, z = 22 + r() * 18; treeList.push([x, y, z]); }
     for (let i = 0, n = Math.round(W * H / 400000) + 1; i < n; i++) {   // copses
       const cx0 = r() * W, cy0 = r() * H, m = 3 + Math.floor(r() * 4);
       for (let q = 0; q < m; q++) treeList.push([cx0 + (r() - 0.5) * 70, cy0 + (r() - 0.5) * 55, 18 + r() * 14]);
     }
+    for (const t of extraTrees) treeList.push(t);
+    { const pts = paths[Math.floor(r() * paths.length)], i0 = 8 + Math.floor(r() * (pts.length - 30)); for (let i = i0; i < i0 + 14; i += 2) { const q = pts[i], q2 = pts[i + 1], tl = Math.hypot(q2[0] - q[0], q2[1] - q[1]) || 1, nx = -(q2[1] - q[1]) / tl, ny = (q2[0] - q[0]) / tl; for (const sd of [-1, 1]) treeList.push([q[0] + nx * 19 * sd, q[1] + ny * 19 * sd, 13 + r() * 3, 1]); } }
+    const fixed = obst.slice();
+    treeList = treeList.filter(t => t[3] || (dPath(t[0], t[1]) > t[2] * 0.8 + 8 && !fixed.some(o => Math.hypot(t[0] - o[0], t[1] - o[1]) < o[2] + t[2] * 0.5)));
     treeList.sort((p1, p2) => p1[1] - p2[1]);
     for (const t of treeList) { stamp(t[0], t[1], t[2]); obst.push([t[0], t[1], t[2] * 0.9 + 10]); }
     this._bush = bush;
