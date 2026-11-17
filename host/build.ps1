@@ -1,5 +1,4 @@
-﻿# 从源码构建 Icon Island：使用 Windows 自带的 .NET Framework C# 编译器。
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $lib = Join-Path $root 'lib'
 $bin = Join-Path $root 'bin'
@@ -17,12 +16,12 @@ if ($missing.Count -gt 0) {
     $archive = Join-Path ([IO.Path]::GetTempPath()) ('icon-island-webview2-' + [Guid]::NewGuid().ToString('N') + '.zip')
     $package = $null
     try {
-        Write-Host "下载 WebView2 SDK $version..."
+        Write-Host "Downloading WebView2 SDK $version..."
         Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/$version/microsoft.web.webview2.$version.nupkg" -OutFile $archive -UseBasicParsing
         $package = [IO.Compression.ZipFile]::OpenRead($archive)
         foreach ($assembly in $assemblies) {
             $entry = $package.GetEntry($assembly.Entry)
-            if ($null -eq $entry) { throw "依赖包缺少 $($assembly.Entry)" }
+            if ($null -eq $entry) { throw "Package is missing $($assembly.Entry)" }
             $sourceStream = $entry.Open()
             $targetStream = $null
             try {
@@ -39,7 +38,7 @@ if ($missing.Count -gt 0) {
     }
 }
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-if (-not (Test-Path -LiteralPath $csc)) { throw '找不到 .NET Framework C# 编译器，请在 64 位 Windows 上构建。' }
+if (-not (Test-Path -LiteralPath $csc)) { throw '.NET Framework C# compiler not found; build on 64-bit Windows.' }
 $appVersion = (Get-Content -LiteralPath (Join-Path $root '..\tools\version.json') -Raw | ConvertFrom-Json).version
 if ($appVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid application version' }
 $versionSource = Join-Path $bin 'IconIsland-version.cs'
@@ -58,7 +57,7 @@ using System.Reflection;
     /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll `
     /r:"$lib\Microsoft.Web.WebView2.Core.dll" /r:"$lib\Microsoft.Web.WebView2.WinForms.dll" `
     "$root\DesktopHost.cs" "$root\Themes.cs" "$versionSource"
-if ($LASTEXITCODE -ne 0) { throw '编译失败' }
+if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 foreach ($assembly in $assemblies) { Copy-Item -LiteralPath (Join-Path $lib $assembly.Name) -Destination $bin -Force }
 Copy-Item -LiteralPath (Join-Path $root 'IconIsland.ico') -Destination (Join-Path $bin 'IconIsland.ico') -Force
-Write-Host "编译完成：$bin\IconIsland.exe"
+Write-Host "Build finished: $bin\IconIsland.exe"

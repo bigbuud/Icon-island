@@ -23,7 +23,7 @@ VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright 2026 Deskland authors and
 !define MUI_ICON "${PAYLOAD}\host\bin\IconIsland.ico"
 !define MUI_UNICON "${PAYLOAD}\host\bin\IconIsland.ico"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\host\bin\IconIsland.exe"
-!define MUI_FINISHPAGE_RUN_TEXT "$(LaunchIcon Island)"
+!define MUI_FINISHPAGE_RUN_TEXT "$(LaunchIconIsland)"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${PAYLOAD}\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -32,21 +32,13 @@ VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright 2026 Deskland authors and
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_UNPAGE_FINISH
-!insertmacro MUI_LANGUAGE "SimpChinese"
 !insertmacro MUI_LANGUAGE "English"
-LangString LaunchIcon Island ${LANG_SIMPCHINESE} "启动 Icon Island"
-LangString LaunchIcon Island ${LANG_ENGLISH} "Launch Icon Island"
-LangString AppFiles ${LANG_SIMPCHINESE} "Icon Island 体验版（沙滩和草地）"
-LangString AppFiles ${LANG_ENGLISH} "Icon Island (Beach and Meadow)"
-LangString DesktopShortcut ${LANG_SIMPCHINESE} "桌面快捷方式"
+LangString LaunchIconIsland ${LANG_ENGLISH} "Launch Icon Island"
+LangString AppFiles ${LANG_ENGLISH} "Icon Island (all themes)"
 LangString DesktopShortcut ${LANG_ENGLISH} "Desktop shortcut"
-LangString NeedX64 ${LANG_SIMPCHINESE} "需要 64 位 Windows 10 或更高版本。"
 LangString NeedX64 ${LANG_ENGLISH} "64-bit Windows 10 or later is required."
-LangString CloseFailed ${LANG_SIMPCHINESE} "请退出正在运行的 Icon Island 后重试。"
 LangString CloseFailed ${LANG_ENGLISH} "Please exit Icon Island and retry."
-LangString RuntimeFailed ${LANG_SIMPCHINESE} "WebView2 安装未完成。请连接网络，安装 Microsoft Edge WebView2 Runtime 后重试。"
 LangString RuntimeFailed ${LANG_ENGLISH} "WebView2 setup did not complete. Connect to the internet, install Microsoft Edge WebView2 Runtime, and retry."
-LangString InstallingRuntime ${LANG_SIMPCHINESE} "正在安装 Microsoft Edge WebView2 Runtime（需要联网）..."
 LangString InstallingRuntime ${LANG_ENGLISH} "Installing Microsoft Edge WebView2 Runtime (internet required)..."
 
 Function .onInit

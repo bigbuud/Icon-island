@@ -1,5 +1,4 @@
-﻿# 调试用：列出桌面相关窗口的层级（Progman / WorkerW / 图标层 / 壁纸窗口），不截屏
-Add-Type @'
+﻿Add-Type @'
 using System; using System.Text; using System.Runtime.InteropServices;
 public static class DeskInspect {
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern IntPtr FindWindow(string c, string t);
@@ -22,7 +21,7 @@ public static class DeskInspect {
   public static string Dump() {
     SetProcessDPIAware();
     IntPtr prog = FindWindow("Progman", null);
-    var sb = new StringBuilder("Progman（子窗口按 z 顺序从上到下）\n");
+    var sb = new StringBuilder("Progman (child windows in z-order, top to bottom)\n");
     Walk(prog, 1, sb);
     return sb.ToString();
   }

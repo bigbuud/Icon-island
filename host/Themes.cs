@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-// 主题清单（prototype/themes.json）：页面映射与产品权限共用同一份清单。
-// 未标 product 的 ready 主题默认拒绝，避免新增付费主题被意外免费开放。
 static class Themes
 {
     static Dictionary<string, object> Find(string pageDir, string id)
@@ -22,7 +20,7 @@ static class Themes
                     return theme;
             }
         }
-        catch (Exception ex) { Log.Write("读取 themes.json 失败：" + ex.Message); }
+        catch (Exception ex) { Log.Write("Reading themes.json failed: " + ex.Message); }
         return null;
     }
 

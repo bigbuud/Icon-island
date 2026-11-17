@@ -4,8 +4,8 @@
     {
       "id": "meadow",
       "adaptive": true,
-      "name": "草地",
-      "desc": "钢笔淡彩的草地，图标藏在白云里，云影是一块块深绿",
+      "name": "Meadow",
+      "desc": "A pen-and-wash meadow where your icons hide in white clouds that cast dark green shadows",
       "page": "meadow.html",
       "status": "ready",
       "product": "free",
@@ -13,12 +13,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "图标周围",
+          "name": "Around icons",
           "params": [
             {
               "key": "sigma",
-              "label": "云团大小",
-              "hint": "图标所在的云从图标往外铺多远",
+              "label": "Cloud size",
+              "hint": "How far the clouds around your icons spread out",
               "min": 40,
               "max": 200,
               "step": 1,
@@ -28,12 +28,12 @@
           ]
         },
         {
-          "name": "云",
+          "name": "Clouds",
           "params": [
             {
               "key": "cover",
-              "label": "草地上的云",
-              "hint": "空旷的草地上空零星飘着的云有多少",
+              "label": "Clouds over the meadow",
+              "hint": "How many clouds drift over the open meadow",
               "min": 0,
               "max": 1,
               "step": 0.01,
@@ -42,8 +42,8 @@
             },
             {
               "key": "flow",
-              "label": "流动速度",
-              "hint": "云飘多快、云团的鼓包变化多快",
+              "label": "Drift speed",
+              "hint": "How fast the clouds drift and their puffs change",
               "min": 0,
               "max": 3,
               "step": 0.05,
@@ -53,25 +53,25 @@
           ]
         },
         {
-          "name": "角色",
+          "name": "Characters",
           "params": [
             {
               "key": "showBoy",
-              "label": "显示男孩",
-              "hint": "男孩和他手中的风筝一起显示或隐藏",
+              "label": "Show boy",
+              "hint": "Show or hide the boy together with his kite",
               "options": [
-                "隐藏",
-                "显示"
+                "Hide",
+                "Show"
               ],
               "default": 1
             },
             {
               "key": "showCat",
-              "label": "显示小猫",
-              "hint": "躺在草地上的小黑猫",
+              "label": "Show kitten",
+              "hint": "The little black kitten resting on the grass",
               "options": [
-                "隐藏",
-                "显示"
+                "Hide",
+                "Show"
               ],
               "default": 1
             }
@@ -81,8 +81,8 @@
     },
     {
       "id": "beach",
-      "name": "沙滩",
-      "desc": "海岸线绕着你的文件弯曲，海浪一层层冲上沙滩",
+      "name": "Beach",
+      "desc": "The shoreline curves around your files as waves roll up the sand",
       "page": "flat.html",
       "status": "ready",
       "product": "free",
@@ -90,12 +90,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "岸线",
+          "name": "Shoreline",
           "params": [
             {
               "key": "sigma",
-              "label": "离岸距离",
-              "hint": "海岸线离图标多远",
+              "label": "Distance from icons",
+              "hint": "How far the shoreline sits from your icons",
               "min": 40,
               "max": 200,
               "step": 1,
@@ -104,8 +104,8 @@
             },
             {
               "key": "warp",
-              "label": "海岸曲折",
-              "hint": "岸线弯弯绕绕的程度",
+              "label": "Winding coast",
+              "hint": "How much the shoreline twists and turns",
               "min": 0,
               "max": 80,
               "step": 1,
@@ -114,12 +114,12 @@
           ]
         },
         {
-          "name": "海水",
+          "name": "Water",
           "params": [
             {
               "key": "shoal",
-              "label": "透明浅滩",
-              "hint": "能看见沙底的浅水有多宽",
+              "label": "Clear shallows",
+              "hint": "How wide the see-through water over the sand is",
               "min": 0,
               "max": 300,
               "step": 1,
@@ -128,8 +128,8 @@
             },
             {
               "key": "shallow",
-              "label": "浅海宽度",
-              "hint": "从青绿过渡到深蓝的距离",
+              "label": "Shallow sea",
+              "hint": "How far the water fades from turquoise to deep blue",
               "min": 120,
               "max": 700,
               "step": 1,
@@ -139,36 +139,36 @@
           ]
         },
         {
-          "name": "元素",
+          "name": "Details",
           "params": [
             {
               "key": "palms",
-              "label": "椰子树数量",
-              "hint": "沿岸椰子树的数量，设为 0 可隐藏；沙地不足时会减少显示",
+              "label": "Coconut palms",
+              "hint": "Number of coastal palms; 0 to hide. Fewer appear if there is not enough sand.",
               "min": 0,
               "max": 10,
               "step": 1,
               "default": 4,
-              "unit": "棵"
+              "unit": ""
             },
             {
               "key": "kayaks",
-              "label": "皮划艇",
+              "label": "Kayaks",
               "min": 0,
               "max": 4,
               "step": 1,
               "default": 2,
-              "unit": "艘"
+              "unit": ""
             },
             {
               "key": "birds",
-              "label": "海鸟",
-              "hint": "在上空滑翔、盘旋的海鸥",
+              "label": "Seabirds",
+              "hint": "Gulls gliding and circling overhead",
               "min": 0,
               "max": 8,
               "step": 1,
               "default": 3,
-              "unit": "只"
+              "unit": ""
             }
           ]
         }
@@ -177,8 +177,8 @@
     {
       "id": "aurora",
       "adaptive": true,
-      "name": "极光",
-      "desc": "夜空中的极光在雪山上方起舞，图标是一盏盏小灯，靠近的图标之间连起星座线",
+      "name": "Aurora",
+      "desc": "Northern lights over a snowy night ridge. Icons become little lights that glow and link up like constellations",
       "page": "aurora.html",
       "status": "ready",
       "product": "free",
@@ -186,12 +186,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "夜空",
+          "name": "Night sky",
           "params": [
             {
               "key": "intensity",
-              "label": "极光亮度",
-              "hint": "极光有多亮",
+              "label": "Aurora brightness",
+              "hint": "How bright the northern lights are",
               "min": 0,
               "max": 1.5,
               "step": 0.01,
@@ -200,8 +200,8 @@
             },
             {
               "key": "speed",
-              "label": "流动速度",
-              "hint": "极光飘动的快慢",
+              "label": "Drift speed",
+              "hint": "How fast the aurora moves",
               "min": 0,
               "max": 3,
               "step": 0.05,
@@ -210,8 +210,8 @@
             },
             {
               "key": "stars",
-              "label": "星星",
-              "hint": "星星的多少与亮度",
+              "label": "Stars",
+              "hint": "How many stars twinkle",
               "min": 0,
               "max": 1,
               "step": 0.01,
@@ -220,22 +220,22 @@
             },
             {
               "key": "links",
-              "label": "星座连线",
-              "hint": "相近的图标之间画细线",
+              "label": "Constellation lines",
+              "hint": "Draw thin lines between nearby icons",
               "options": [
-                "关闭",
-                "开启"
+                "Off",
+                "On"
               ],
               "default": 1
             },
             {
               "key": "palette",
-              "label": "极光颜色",
-              "hint": "极光的色调",
+              "label": "Aurora colour",
+              "hint": "The colour of the lights",
               "options": [
-                "翠绿",
-                "紫罗兰",
-                "冰蓝"
+                "Green",
+                "Violet",
+                "Ice blue"
               ],
               "default": 0
             }
@@ -246,8 +246,8 @@
     {
       "id": "sky",
       "adaptive": true,
-      "name": "天空",
-      "desc": "卡通风的蓝天白云，图标坐在一团团圆鼓鼓的云上；可选白天、傍晚、晚上",
+      "name": "Sky",
+      "desc": "A cartoon sky where your icons sit on puffy clouds. Choose day, dusk or night",
       "page": "sky.html",
       "status": "ready",
       "product": "free",
@@ -255,23 +255,23 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "天空",
+          "name": "Sky",
           "params": [
             {
               "key": "time",
-              "label": "时间",
-              "hint": "一天中的哪个时刻",
+              "label": "Time of day",
+              "hint": "Which moment of the day to show",
               "options": [
-                "白天",
-                "傍晚",
-                "夜晚"
+                "Day",
+                "Dusk",
+                "Night"
               ],
               "default": 0
             },
             {
               "key": "cover",
-              "label": "云量",
-              "hint": "空旷处飘着多少云",
+              "label": "Cloud cover",
+              "hint": "How many clouds drift in the open sky",
               "min": 0,
               "max": 1,
               "step": 0.01,
@@ -280,8 +280,8 @@
             },
             {
               "key": "flow",
-              "label": "飘动速度",
-              "hint": "云飘多快",
+              "label": "Drift speed",
+              "hint": "How fast the clouds drift",
               "min": 0,
               "max": 3,
               "step": 0.05,
@@ -295,8 +295,8 @@
     {
       "id": "ocean",
       "adaptive": true,
-      "name": "大海",
-      "desc": "俯看蓝色的大海，每个图标是一座被浅滩和浪花环绕的小岛，偶尔有帆船驶过",
+      "name": "Ocean",
+      "desc": "A top-down blue sea where every icon becomes a small island ringed by shallows and foam, with the odd sailboat passing",
       "page": "ocean.html",
       "status": "ready",
       "product": "free",
@@ -304,12 +304,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "岛屿",
+          "name": "Islands",
           "params": [
             {
               "key": "shore",
-              "label": "浅滩宽度",
-              "hint": "图标周围浅水区有多宽",
+              "label": "Shallows width",
+              "hint": "How wide the shallow water around icons is",
               "min": 40,
               "max": 200,
               "step": 1,
@@ -319,12 +319,12 @@
           ]
         },
         {
-          "name": "海面",
+          "name": "Sea",
           "params": [
             {
               "key": "wave",
-              "label": "海浪速度",
-              "hint": "海面波纹流动的快慢",
+              "label": "Wave speed",
+              "hint": "How fast the waves move",
               "min": 0,
               "max": 3,
               "step": 0.05,
@@ -333,11 +333,11 @@
             },
             {
               "key": "boats",
-              "label": "帆船",
-              "hint": "海上偶尔驶过的帆船",
+              "label": "Sailboats",
+              "hint": "Boats that sail past now and then",
               "options": [
-                "隐藏",
-                "显示"
+                "Hide",
+                "Show"
               ],
               "default": 1
             }
@@ -348,8 +348,8 @@
     {
       "id": "forest",
       "adaptive": true,
-      "name": "森林",
-      "desc": "水粉风的森林，图标在林间的空地上，树冠随风轻轻摇；可选夏、秋、春",
+      "name": "Forest",
+      "desc": "A gouache forest where your icons sit in clearings and the canopy sways. Summer, autumn or spring",
       "page": "forest.html",
       "status": "ready",
       "product": "free",
@@ -357,12 +357,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "树林",
+          "name": "Trees",
           "params": [
             {
               "key": "density",
-              "label": "树木密度",
-              "hint": "森林有多茂密",
+              "label": "Tree density",
+              "hint": "How thick the forest is",
               "min": 0,
               "max": 1,
               "step": 0.01,
@@ -371,8 +371,8 @@
             },
             {
               "key": "sway",
-              "label": "摇摆",
-              "hint": "树冠随风摇摆的幅度与速度",
+              "label": "Sway",
+              "hint": "How strongly the canopy sways in the wind",
               "min": 0,
               "max": 3,
               "step": 0.05,
@@ -382,16 +382,16 @@
           ]
         },
         {
-          "name": "季节",
+          "name": "Season",
           "params": [
             {
               "key": "season",
-              "label": "季节",
-              "hint": "森林的季节",
+              "label": "Season",
+              "hint": "The season of the forest",
               "options": [
-                "夏",
-                "秋",
-                "春"
+                "Summer",
+                "Autumn",
+                "Spring"
               ],
               "default": 0
             }
@@ -402,8 +402,8 @@
     {
       "id": "lotus",
       "adaptive": true,
-      "name": "荷塘",
-      "desc": "荷叶荷花长满池塘，一群锦鲤在荷叶和图标之间游，荡开一圈圈涟漪",
+      "name": "Lotus pond",
+      "desc": "A pond full of lily pads and lotus flowers with koi swimming between your icons and rippling the water",
       "page": "lotus.html",
       "status": "ready",
       "product": "free",
@@ -411,12 +411,12 @@
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "池塘",
+          "name": "Pond",
           "params": [
             {
               "key": "koi",
-              "label": "锦鲤数量",
-              "hint": "池塘里有几条锦鲤",
+              "label": "Koi",
+              "hint": "How many koi swim in the pond",
               "min": 0,
               "max": 12,
               "step": 1,
@@ -424,8 +424,8 @@
             },
             {
               "key": "bloom",
-              "label": "荷花",
-              "hint": "荷花的多少",
+              "label": "Blossoms",
+              "hint": "How many lotus flowers bloom",
               "min": 0,
               "max": 1,
               "step": 0.01,
@@ -435,15 +435,15 @@
           ]
         },
         {
-          "name": "水面",
+          "name": "Water",
           "params": [
             {
               "key": "ripples",
-              "label": "涟漪",
-              "hint": "图标移动或锦鲤游过时荡开涟漪",
+              "label": "Ripples",
+              "hint": "Ripples when icons move or koi pass",
               "options": [
-                "关闭",
-                "开启"
+                "Off",
+                "On"
               ],
               "default": 1
             }
