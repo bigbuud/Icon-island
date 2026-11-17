@@ -351,6 +351,48 @@
           "hint": "How many wild flowers grow in the grass"
         }
       }
+    },
+    "playground": {
+      "name": "Playground",
+      "desc": "A park seen from above. Your icons sit in wooden sandboxes with toys, surrounded by swings, a slide and a merry-go-round. Kids play, parents stroll and now and then a dog runs by",
+      "groups": [
+        "Park"
+      ],
+      "params": {
+        "kids": {
+          "label": "Kids & parents",
+          "hint": "How many children and parents are in the park"
+        },
+        "equipment": {
+          "label": "Playground equipment",
+          "hint": "Swings, slide, merry-go-round and more",
+          "options": [
+            "Off",
+            "On"
+          ]
+        }
+      }
+    },
+    "desert": {
+      "name": "Desert",
+      "desc": "Sand dunes and pyramids seen from above. Every group of icons gets its own oasis with palms and a pool, camels rest around them and now and then a caravan passes",
+      "groups": [
+        "Desert"
+      ],
+      "params": {
+        "camels": {
+          "label": "Camels",
+          "hint": "How many camels roam around the oases"
+        },
+        "time": {
+          "label": "Time of day",
+          "hint": "Midday sun or a warm sunset",
+          "options": [
+            "Day",
+            "Sunset"
+          ]
+        }
+      }
     }
   }
 }

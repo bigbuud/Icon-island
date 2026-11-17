@@ -470,6 +470,82 @@
           ]
         }
       ]
+    },
+    {
+      "id": "playground",
+      "adaptive": true,
+      "name": "Playground",
+      "desc": "A park seen from above. Your icons sit in wooden sandboxes with toys, surrounded by swings, a slide and a merry-go-round. Kids play, parents stroll and now and then a dog runs by",
+      "page": "playground.html",
+      "status": "ready",
+      "product": "free",
+      "thumb": "url(thumbs/playground-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#6fae46,#e8c87a)",
+      "thumbSource": "custom",
+      "groups": [
+        {
+          "name": "Park",
+          "params": [
+            {
+              "key": "kids",
+              "label": "Kids & parents",
+              "hint": "How many children and parents are in the park",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "equipment",
+              "label": "Playground equipment",
+              "hint": "Swings, slide, merry-go-round and more",
+              "options": [
+                "Off",
+                "On"
+              ],
+              "default": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desert",
+      "adaptive": true,
+      "name": "Desert",
+      "desc": "Sand dunes and pyramids seen from above. Every group of icons gets its own oasis with palms and a pool, camels rest around them and now and then a caravan passes",
+      "page": "desert.html",
+      "status": "ready",
+      "product": "free",
+      "thumb": "url(thumbs/desert-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#6fae46,#e8c87a)",
+      "thumbSource": "custom",
+      "groups": [
+        {
+          "name": "Desert",
+          "params": [
+            {
+              "key": "camels",
+              "label": "Camels",
+              "hint": "How many camels roam around the oases",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "time",
+              "label": "Time of day",
+              "hint": "Midday sun or a warm sunset",
+              "options": [
+                "Day",
+                "Sunset"
+              ],
+              "default": 0
+            }
+          ]
+        }
+      ]
     }
   ]
 }

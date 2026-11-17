@@ -1,4 +1,4 @@
-// Shared animals for the Pasture and Forest themes: top-down vector drawings plus a simple wander AI.
+// Shared creatures for the Pasture, Forest, Playground and Desert themes (animals, people, camels): top-down vector drawings plus a simple wander AI.
 //
 //   const herd = new Fauna.Herd();
 //   herd.add('cow', x, y);                       // kinds: cow, horse, deer, boar, fox, rabbit
@@ -16,6 +16,10 @@ const Fauna = (() => {
     boar:   { size: 25, speed: 12, turn: 2.0 },
     fox:    { size: 22, speed: 20, turn: 3.0 },
     rabbit: { size: 10, speed: 24, turn: 5.0 },
+    kid:    { size: 20, speed: 26, turn: 4.0 },
+    adult:  { size: 29, speed: 15, turn: 2.5 },
+    dog:    { size: 15, speed: 55, turn: 5.0 },
+    camel:  { size: 50, speed: 12, turn: 1.2 },
   };
   const rnd = Math.random;
   const pickOf = a => a[Math.floor(rnd() * a.length)];
@@ -37,6 +41,11 @@ const Fauna = (() => {
       case 'deer': return { body: pickOf(['#b87a45', '#a96f3c', '#c58a52']), male: rnd() < 0.4 };
       case 'boar': return { body: pickOf(['#4a3b32', '#3a2f29', '#5a4638']), snout: '#7a6252' };
       case 'fox': return { body: pickOf(['#d6702a', '#c9622a']) };
+      case 'kid': case 'adult': return {
+        shirt: pickOf(['#e5484d', '#2f80ed', '#f2c94c', '#27ae60', '#9b51e0', '#f2994a', '#eb6fa5', '#56ccf2']), pants: pickOf(['#34495e', '#2d3f6b', '#5a4a3a', '#6b7280', '#3b6b4a']),
+        skin: pickOf(['#f2c9a5', '#e0a97c', '#c68a5b', '#8d5a3b', '#f6d7bd']), hair: pickOf(['#2b1d14', '#5a3a1e', '#a8742c', '#d9b25a', '#141414', '#8a3b1a']), long: rnd() < 0.5 };
+      case 'dog': return { body: pickOf(['#b9824a', '#2b2622', '#e9e2d2', '#8a5a34', '#d6b06a']), patch: pickOf(['#f1ece0', '#3a302a', '#6b4a2c']) };
+      case 'camel': return { body: pickOf(['#c99a5b', '#bf8f52', '#d4a96a']), cloth: pickOf(['#b5382a', '#2f6fb0', '#d9a21e', '#3a8a5a']) };
       default: return { body: pickOf(['#9b8672', '#a89884', '#8a7a68']) };
     }
   }
@@ -121,6 +130,44 @@ const Fauna = (() => {
       c.fillStyle = '#f6f0e4'; el(c, 0.46 * L, 0, 0.06 * L, 0.045 * L);
       c.fillStyle = '#2a1a12'; el(c, 0.52 * L, 0, 0.018 * L, 0.018 * L); el(c, 0.36 * L, -0.07 * L, 0.04 * L, 0.025 * L, -0.5); el(c, 0.36 * L, 0.07 * L, 0.04 * L, 0.025 * L, 0.5);
     },
+    kid(c, a, L, t) { DRAW.person(c, a, L * 1.5, t); },
+    adult(c, a, L, t) { DRAW.person(c, a, L * 1.5, t); },
+    person(c, a, L, t) {
+      const P = a.pal, v = Math.min(1, a.v / SPEC[a.kind].speed), play = a.state === 'graze', sw = Math.sin(a.ph * 2) * v, bob = play ? Math.sin(t * 6 + a.seed) : 0;
+      c.fillStyle = 'rgba(20,30,10,0.22)'; el(c, 0.06 * L, 0.06 * L, 0.26 * L, 0.4 * L);
+      c.fillStyle = P.pants; el(c, sw * 0.2 * L, -0.13 * L, 0.2 * L, 0.075 * L); el(c, -sw * 0.2 * L, 0.13 * L, 0.2 * L, 0.075 * L);
+      const ax = play ? 0.2 * L + bob * 0.07 * L : -sw * 0.16 * L;
+      c.fillStyle = P.skin; el(c, ax, -0.33 * L, 0.1 * L, 0.05 * L); el(c, play ? 0.2 * L - bob * 0.07 * L : sw * 0.16 * L, 0.33 * L, 0.1 * L, 0.05 * L);
+      c.fillStyle = P.shirt; el(c, play ? 0.06 * L : 0, 0, 0.17 * L, 0.33 * L);
+      c.fillStyle = 'rgba(255,255,255,0.2)'; el(c, 0.02 * L, -0.1 * L, 0.1 * L, 0.07 * L);
+      const hx = play ? 0.14 * L : 0.03 * L;
+      c.fillStyle = P.skin; el(c, hx + 0.02 * L, 0, 0.15 * L, 0.16 * L);
+      c.fillStyle = P.hair; el(c, hx - 0.04 * L, 0, 0.14 * L, 0.17 * L); if (P.long && a.kind === 'adult') el(c, hx - 0.14 * L, 0, 0.14 * L, 0.12 * L);
+    },
+    dog(c, a, L, t) {
+      const P = a.pal, v = Math.min(1, a.v / SPEC.dog.speed), sit = a.state === 'graze';
+      c.fillStyle = 'rgba(20,30,10,0.2)'; el(c, 0.04 * L, 0.05 * L, 0.36 * L, 0.12 * L);
+      if (!sit) legs(c, L, a.ph * 1.4, v, 4, 0.2, 0.07, '#2a1c14', 0.045);
+      c.strokeStyle = P.body; c.lineWidth = 0.05 * L; c.lineCap = 'round'; c.beginPath(); c.moveTo(-0.3 * L, 0); c.quadraticCurveTo(-0.45 * L, Math.sin(t * 14 + a.seed) * 0.12 * L, -0.5 * L, Math.sin(t * 14 + a.seed) * 0.16 * L); c.stroke();
+      c.fillStyle = P.body; el(c, 0, 0, 0.32 * L, 0.11 * L); c.fillStyle = P.patch; el(c, -0.05 * L, 0.04 * L, 0.1 * L, 0.05 * L);
+      c.fillStyle = P.body; el(c, 0.38 * L, 0, 0.12 * L, 0.095 * L); c.fillStyle = P.patch; el(c, 0.47 * L, 0, 0.06 * L, 0.05 * L);
+      c.fillStyle = '#1c1410'; el(c, 0.53 * L, 0, 0.022 * L, 0.022 * L); el(c, 0.34 * L, -0.09 * L, 0.05 * L, 0.03 * L, -0.4); el(c, 0.34 * L, 0.09 * L, 0.05 * L, 0.03 * L, 0.4);
+    },
+    camel(c, a, L, t) {
+      const P = a.pal, v = Math.min(1, a.v / SPEC.camel.speed), rest = a.state === 'graze';
+      c.fillStyle = 'rgba(80,50,10,0.28)'; el(c, 0.06 * L, 0.07 * L, 0.46 * L, 0.2 * L);
+      if (!rest) legs(c, L, a.ph, v, 4, 0.27, 0.15, '#7a5a30', 0.05); else { c.fillStyle = '#7a5a30'; el(c, 0.2 * L, -0.17 * L, 0.1 * L, 0.05 * L); el(c, 0.2 * L, 0.17 * L, 0.1 * L, 0.05 * L); }
+      c.strokeStyle = P.body; c.lineWidth = 0.03 * L; c.lineCap = 'round'; c.beginPath(); c.moveTo(-0.44 * L, 0); c.quadraticCurveTo(-0.52 * L, Math.sin(t * 2 + a.seed) * 0.05 * L, -0.54 * L, 0.04 * L); c.stroke();
+      c.fillStyle = P.body; el(c, 0, 0, 0.44 * L, 0.18 * L);
+      c.fillStyle = 'rgba(255,255,255,0.14)'; el(c, -0.04 * L, -0.07 * L, 0.34 * L, 0.05 * L);
+      c.fillStyle = P.cloth; el(c, 0, 0, 0.2 * L, 0.17 * L); c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(-0.02 * L, -0.16 * L, 0.04 * L, 0.32 * L);
+      c.fillStyle = P.body; el(c, -0.1 * L, 0, 0.1 * L, 0.11 * L); el(c, 0.12 * L, 0, 0.1 * L, 0.11 * L);
+      c.fillStyle = 'rgba(255,255,255,0.2)'; el(c, -0.12 * L, -0.03 * L, 0.05 * L, 0.04 * L); el(c, 0.1 * L, -0.03 * L, 0.05 * L, 0.04 * L);
+      const ext = rest ? -0.06 * L : 0;
+      c.strokeStyle = P.body; c.lineWidth = 0.1 * L; c.beginPath(); c.moveTo(0.34 * L, 0); c.quadraticCurveTo(0.5 * L + ext, -0.03 * L, 0.6 * L + ext, 0); c.stroke();
+      c.fillStyle = P.body; el(c, 0.67 * L + ext, 0, 0.1 * L, 0.06 * L); c.fillStyle = '#2a1c14'; el(c, 0.74 * L + ext, 0, 0.02 * L, 0.02 * L);
+      c.fillStyle = P.body; el(c, 0.6 * L + ext, -0.07 * L, 0.03 * L, 0.018 * L, -0.5); el(c, 0.6 * L + ext, 0.07 * L, 0.03 * L, 0.018 * L, 0.5);
+    },
     rabbit(c, a, L, t) {
       const P = a.pal;
       c.fillStyle = 'rgba(20,30,10,0.2)'; el(c, 0.04 * L, 0.06 * L, 0.38 * L, 0.2 * L);
@@ -177,5 +224,8 @@ const Fauna = (() => {
       ctx.globalAlpha = 1;
     }
   }
-  return { Herd, SPEC };
+  // a free-standing creature (not in a Herd), e.g. a scripted caravan camel
+  const make = (kind, x, y) => { const sp = SPEC[kind]; return { kind, x, y, ang: 0, want: 0, v: 0, ph: rnd() * 6, state: 'walk', timer: 1, a: 1, leaving: false, lost: 0, seed: rnd() * 6.28, pal: palette(kind), size: sp.size * 1.55 }; };
+  const drawOne = (ctx, a, t) => { ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(a.ang); ctx.globalAlpha = a.a; DRAW[a.kind](ctx, a, a.size, t); ctx.restore(); ctx.globalAlpha = 1; };
+  return { Herd, SPEC, make, drawOne };
 })();
