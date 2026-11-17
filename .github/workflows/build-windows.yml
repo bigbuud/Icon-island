@@ -17,9 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install NSIS (installer maker)
+        shell: powershell
+        run: choco install nsis -y --no-progress
+
       - name: Build installer
         shell: powershell
-        run: powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1
+        run: powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1 -NsisCompiler "C:\Program Files (x86)\NSIS\makensis.exe"
 
       - name: Upload as workflow artifact
         uses: actions/upload-artifact@v4
