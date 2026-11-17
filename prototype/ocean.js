@@ -1,11 +1,13 @@
-// Thema "Ocean": bovenaanzicht van een turkoois-blauwe zee. Elk icoon is een eiland/zandbank met schuimrand
-// en ondiep water; zeilbootjes drijven voorbij. Rekenwerk gebeurt op een grof raster (afstandsveld + kleur)
-// dat opgeschaald wordt; het afstandsveld wordt alleen herberekend als iconen bewegen.
+// Thema "Ocean": bovenaanzicht van een turkoois-blauwe zee. Elk icoon is een eiland met zandstrand, groene
+// rand, palmen en een lagune met schuimrand; buurpictogrammen smelten samen tot een groter eiland.
+// Zeilbootjes drijven voorbij. Rekenwerk gebeurt op een grof raster (afstandsveld + kleur) dat opgeschaald
+// wordt; het afstandsveld wordt alleen herberekend als iconen bewegen.
 IconIsland.theme({
   params: { shore: 90, wave: 1, boats: 1 },
 
-  _gw: 0, _gh: 0, _cell: 4, _D: null, _N: null, _small: null, _img: null, _u32: null, _sig: -1,
-  _sparks: [], _boats: [], _bt: 0,
+  EDGE: 30,                                   // afstand (px) van de icoon-kern tot de waterlijn
+  _gw: 0, _gh: 0, _cell: 4, _D: null, _N: null, _E: null, _V: null, _small: null, _img: null, _u32: null, _sig: -1,
+  _sparks: [], _boats: [], _trees: [], _bt: 0,
 
   init(env, seed) {
     const r = env.rng(seed + 31), W = env.W, H = env.H;
@@ -14,6 +16,13 @@ IconIsland.theme({
       const dir = r() < 0.5 ? 1 : -1;
       return { x: r() * (W + 300) - 150, y: H * (0.12 + 0.76 * ((i + r() * 0.6) / 3)), v: (14 + r() * 10) * dir, ph: r() * 6.28, hull: r() < 0.5 ? '#c98a4f' : '#b55f44' };
     });
+    // kandidaat-posities voor palmen en struiken (gejitterd raster); alleen zichtbaar op land, aan de rand
+    const sp = 28, trees = [];
+    for (let j = -1; j < H / sp + 1; j++) for (let i = -1; i < W / sp + 1; i++) {
+      const x = (i + 0.15 + r() * 0.7) * sp, y = (j + 0.15 + r() * 0.7) * sp, k = r();
+      trees.push({ x, y, kind: k < 0.55 ? 0 : 1, sz: 0.8 + r() * 0.5, rot: r() * 6.28, ph: r() * 6.28, thr: r() });
+    }
+    this._trees = trees;
     this._seed = seed; this._sig = -1;
   },
 
@@ -23,13 +32,15 @@ IconIsland.theme({
     const gw = Math.ceil(W / cell), gh = Math.ceil(H / cell);
     this._cell = cell; this._gw = gw; this._gh = gh;
     this._D = new Float32Array(gw * gh);
-    this._N = new Float32Array(gw * gh);           // statisch: diepteruis + kustvorm
-    this._E = new Float32Array(gw * gh);
+    this._N = new Float32Array(gw * gh);           // statisch: diepteruis
+    this._E = new Float32Array(gw * gh);           // statisch: golvende kustlijn
+    this._V = new Float32Array(gw * gh);           // statisch: begroeiing
     const seed = this._seed || 1;
     for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
       const x = (i + 0.5) * cell, y = (j + 0.5) * cell, k = j * gw + i;
       this._N[k] = env.fbm(x / 420, y / 420, seed + 3, 3);
-      this._E[k] = (env.fbm(x / 55, y / 55, seed + 9, 3) - 0.5) * 26;    // golvende kustlijn
+      this._E[k] = (env.fbm(x / 70, y / 70, seed + 9, 3) - 0.5) * 58 + (env.noise(x / 24, y / 24, seed + 5) - 0.5) * 9;
+      this._V[k] = env.fbm(x / 26, y / 26, seed + 21, 3);
     }
     const s = document.createElement('canvas'); s.width = gw; s.height = gh;
     this._small = s; this._gc = s.getContext('2d');
@@ -37,30 +48,55 @@ IconIsland.theme({
     this._sig = -1;
   },
 
+  // afstand tot de dichtstbijzijnde icoon-kern, zacht samengevoegd (smooth-min) zodat buureilanden fuseren
   _distances(env) {
     const list = env.icons, n = list.length, gw = this._gw, gh = this._gh, c = this._cell, D = this._D, E = this._E;
+    const K = 40;
     for (let j = 0; j < gh; j++) {
       const y = (j + 0.5) * c;
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) * c; let best = 1e9;
         for (let q = 0; q < n; q++) {
           const ic = list[q];
-          const dx = Math.max(ic.x + 6 - x, 0, x - (ic.x + ic.w - 6)), dy = Math.max(ic.y + 4 - y, 0, y - (ic.y + ic.h - 4));
+          const dx = Math.max(ic.x + 20 - x, 0, x - (ic.x + ic.w - 20)), dy = Math.max(ic.y + 26 - y, 0, y - (ic.y + ic.h - 24));
           const d = Math.sqrt(dx * dx + dy * dy) + (1 - ic.a) * 90;
-          if (d < best) best = d;
+          if (best > 1e8) best = d;
+          else { const h = Math.max(K - Math.abs(best - d), 0) / K; best = Math.min(best, d) - h * h * K * 0.25; }
         }
-        D[j * gw + i] = best + E[j * gw + i] * (best < 90 ? 1 : 0);
+        const k = j * gw + i;
+        D[k] = best + (best < 140 ? E[k] * (1 - best / 140) : 0);
       }
     }
   },
 
+  _palm(ctx, x, y, sz, rot, sway, a) {
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(40,30,10,0.22)'; ctx.beginPath(); ctx.ellipse(4 * sz, 5 * sz, 11 * sz, 6 * sz, 0.5, 0, 7); ctx.fill();   // schaduw
+    for (let i = 0; i < 7; i++) {
+      const ang = rot + i * 0.8976 + Math.sin(sway + i) * 0.06, L = (11 + (i % 2) * 2) * sz;
+      ctx.fillStyle = i % 2 ? '#2f9a54' : '#3fae62';
+      ctx.save(); ctx.rotate(ang);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(L * 0.5, -3.4 * sz, L, 0); ctx.quadraticCurveTo(L * 0.5, 3.4 * sz, 0, 0); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#8a5a2b'; ctx.beginPath(); ctx.arc(0, 0, 2.1 * sz, 0, 7); ctx.fill();
+    ctx.restore();
+  },
+  _bush(ctx, x, y, sz, a) {
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(40,30,10,0.2)'; ctx.beginPath(); ctx.ellipse(2, 3, 7 * sz, 4 * sz, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#2d8a4c'; ctx.beginPath(); ctx.arc(0, 0, 5.5 * sz, 0, 7); ctx.fill();
+    ctx.fillStyle = '#4cb869'; ctx.beginPath(); ctx.arc(-1.4 * sz, -1.4 * sz, 3.4 * sz, 0, 7); ctx.fill();
+    ctx.restore();
+  },
+
   frame(ctx, t, dt, env) {
-    const { W, H, P } = env, list = env.icons;
+    const { W, H, P } = env, list = env.icons, EDGE = this.EDGE;
     let sig = list.length;
     for (const ic of list) sig += ic.x * 1.3 + ic.y * 0.7 + ic.w + ic.h * 0.5 + ic.a * 97;
     if (sig !== this._sig) { this._sig = sig; this._distances(env); }
 
-    const gw = this._gw, gh = this._gh, c = this._cell, D = this._D, N = this._N, u32 = this._u32;
+    const gw = this._gw, gh = this._gh, c = this._cell, D = this._D, N = this._N, V = this._V, u32 = this._u32;
     const tw = t * P.wave, shore = P.shore, inv = 1 / shore;
     const cl = (v, a, b) => v < a ? a : v > b ? b : v;
     const ss = (a, b, v) => { const x = cl((v - a) / (b - a), 0, 1); return x * x * (3 - 2 * x); };
@@ -69,35 +105,38 @@ IconIsland.theme({
       const y = (j + 0.5) * c, row = j * gw;
       const ry = Math.sin(y * 0.03 + tw * 0.6) * 2, ry2 = y * 0.05, cyy = Math.sin(y * 0.005 - sh2 + 1.3);
       for (let i = 0; i < gw; i++) {
-        const x = (i + 0.5) * c, k = row + i, d = D[k], nn = N[k];
+        const x = (i + 0.5) * c, k = row + i, dd = D[k] - EDGE, nn = N[k];     // dd < 0: land
         // diep water
         let r = 12 + nn * 26, g = 62 + nn * 54, b = 128 + nn * 50;
         // wolkenschaduw
         const cs = Math.sin(x * 0.0035 + sh1) * cyy;
         const shade = 1 - 0.22 * ss(0.35, 0.8, cs);
-        // ondiep
-        let s = d >= shore ? 0 : cl(1 - (d - 8) * inv, 0, 1); s = s * s * (3 - 2 * s);
+        // ondiep: lagune met zandbank-vlekken
+        let s = dd >= shore ? 0 : cl(1 - (dd - 1) * inv, 0, 1); s = s * s * (3 - 2 * s);
+        const patch = 0.82 + 0.36 * V[k]; s = cl(s * patch, 0, 1);
         r += (92 - r) * s * 0.9; g += (212 - g) * s * 0.95; b += (205 - b) * s * 0.85;
         // golfkammen
         const rp = Math.sin(x * 0.045 + ry + tw * 0.9) + Math.sin(ry2 - x * 0.02 - tw * 0.5);
         const crest = ss(1.55, 1.95, rp) * (0.16 - 0.06 * s);
         r += (255 - r) * crest; g += (255 - g) * crest; b += (255 - b) * crest;
         // brekende schuimbanen richting kust
-        if (d < shore * 0.95 && d > 8) {
-          const p = d / 24 - tw * 0.12, f = p - Math.floor(p), band = Math.pow(Math.sin(f * 3.14159), 10) * (1 - d * inv / 0.95) * 0.5;
+        if (dd < shore * 0.95 && dd > 1) {
+          const p = dd / 24 - tw * 0.12, f = p - Math.floor(p), band = Math.pow(Math.sin(f * 3.14159), 10) * (1 - dd * inv / 0.95) * 0.3;
           r += (255 - r) * band; g += (255 - g) * band; b += (255 - b) * band;
         }
         r *= shade; g *= shade; b *= shade;
         // schuimrand
-        const e = (d - 11 - 2.5 * Math.sin(tw * 1.3 + x * 0.05 + y * 0.03)) / 3.2, foam = Math.exp(-e * e) * 0.9;
+        const e = (dd - 1.5 - 2.5 * Math.sin(tw * 1.3 + x * 0.05 + y * 0.03)) / 3.2, foam = Math.exp(-e * e) * 0.9;
         r += (255 - r) * foam; g += (255 - g) * foam; b += (255 - b) * foam;
-        // zand
-        const sand = ss(10.5, 7, d);
-        if (sand > 0) {
-          const wet = ss(7, 10, d);
-          const gr = 0.5 + 0.5 * Math.sin(x * 0.9 + y * 0.7) * 0.15;
-          const sr = 241 - wet * 38 + gr * 4, sg = 220 - wet * 36 + gr * 4, sb = 168 - wet * 38;
-          r += (sr - r) * sand; g += (sg - g) * sand; b += (sb - b) * sand;
+        // land: nat zand bij de waterlijn, droog zand binnen, groen aan de rand van het eiland
+        const land = ss(1.2, -1.6, dd);
+        if (land > 0) {
+          const wet = ss(-5, -0.5, dd), dry = ss(-9, -22, dd);
+          const grain = (Math.sin(x * 0.9 + y * 0.7) * 0.5 + 0.5) * 5;
+          let sr = 236 - wet * 40 + dry * 10 + grain, sg = 214 - wet * 36 + dry * 8 + grain, sb = 160 - wet * 38 + dry * 6;
+          const veg = ss(0.52, 0.64, V[k]) * ss(-7, -11, dd) * ss(-27, -20, dd);            // groene vlekken in een band aan de buitenrand
+          sr += (92 - sr) * veg * 0.8; sg += (168 - sg) * veg * 0.8; sb += (84 - sb) * veg * 0.8;
+          r += (sr - r) * land; g += (sg - g) * land; b += (sb - b) * land;
         }
         u32[k] = (255 << 24) | ((b < 0 ? 0 : b > 255 ? 255 : b | 0) << 16) | ((g < 0 ? 0 : g > 255 ? 255 : g | 0) << 8) | (r < 0 ? 0 : r > 255 ? 255 : r | 0);
       }
@@ -107,11 +146,22 @@ IconIsland.theme({
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(this._small, 0, 0, gw * c, gh * c);
 
+    // palmen en struiken op het eiland (alleen in de buitenband, zodat ze de iconen niet bedekken)
+    for (const tr of this._trees) {
+      const gi = Math.min(gh - 1, Math.max(0, (tr.y / c) | 0)) * gw + Math.min(gw - 1, Math.max(0, (tr.x / c) | 0));
+      const dd = D[gi] - EDGE;
+      const a = ss(-6, -10, dd) * ss(-26, -19, dd);
+      if (a < 0.05 || tr.thr > 0.62) continue;
+      if (tr.kind === 0) this._palm(ctx, tr.x, tr.y, tr.sz, tr.rot, t * 0.9 * (0.5 + 0.5 * P.wave) + tr.ph, a);
+      else this._bush(ctx, tr.x, tr.y, tr.sz, a);
+    }
+    ctx.globalAlpha = 1;
+
     // glinsteringen
     ctx.fillStyle = '#fff';
     for (const sp of this._sparks) {
       const k = Math.min(gh - 1, (sp.y / c) | 0) * gw + Math.min(gw - 1, (sp.x / c) | 0);
-      if (D[k] < 14) continue;
+      if (D[k] < EDGE + 4) continue;
       const a = Math.pow(Math.max(0, Math.sin(t * sp.f * (0.5 + 0.5 * P.wave) + sp.p)), 6) * 0.75;
       if (a < 0.03) continue;
       ctx.globalAlpha = a; ctx.fillRect(sp.x, sp.y, sp.l, 1.4);
@@ -124,7 +174,7 @@ IconIsland.theme({
       if (bt.v > 0 && bt.x > W + 150) bt.x = -150; else if (bt.v < 0 && bt.x < -150) bt.x = W + 150;
       const by = bt.y + Math.sin(t * 0.4 + bt.ph) * 8;
       const gi = Math.min(gh - 1, Math.max(0, (by / c) | 0)) * gw + Math.min(gw - 1, Math.max(0, (bt.x / c) | 0));
-      const vis = ss(12, 55, D[gi] || 99);
+      const vis = ss(EDGE + 6, EDGE + 55, D[gi] || 99);
       if (vis < 0.02) continue;
       const ang = Math.atan2(Math.cos(t * 0.4 + bt.ph) * 8 * 0.4, Math.abs(bt.v)) + (bt.v < 0 ? Math.PI : 0), dirx = Math.cos(ang), diry = Math.sin(ang);
       ctx.save(); ctx.translate(bt.x, by); ctx.globalAlpha = vis;
