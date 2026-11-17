@@ -343,7 +343,7 @@
           ]
         }
       ],
-      "thumb": "url(thumbs/pasture-open.webp?v=2) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)"
+      "thumb": "url(thumbs/pasture-open.webp?v=3) center / cover no-repeat, linear-gradient(160deg,#2f6c36,#9bd062)"
     },
     {
       "id": "forest",

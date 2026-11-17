@@ -24,33 +24,65 @@ IconIsland.theme({
     this._tmp = mk(cw, ch); this._comp_c = mk(cw, ch);
     const r = env.rng(seed + 17);
 
-    // ---- surrounding countryside: a patchwork of fields with hedges (low-res pixel pass, upscaled)
-    const sc = 3, lw = Math.ceil(W / sc) + 2, lh = Math.ceil(H / sc) + 2, small = mk(lw, lh), sg = small.getContext('2d'), img = sg.createImageData(lw, lh), u = new Uint32Array(img.data.buffer);
-    const pal = [[159, 207, 90], [181, 214, 95], [216, 207, 104], [127, 184, 72], [201, 196, 87], [143, 191, 80], [230, 217, 122], [111, 174, 68], [170, 203, 98]];
-    const ids = new Int32Array(lw * lh), st = new Uint8Array(lw * lh);
+    // ---- surrounding countryside: big organic fields (meadow, wheat, crop rows) with bush hedges, paths, ponds, trees, farm buildings
+    const sc = 2, lw = Math.ceil(W / sc) + 2, lh = Math.ceil(H / sc) + 2, small = mk(lw, lh), sg = small.getContext('2d'), img = sg.createImageData(lw, lh), u = new Uint32Array(img.data.buffer);
+    const meadow = [[140, 198, 90], [124, 189, 78], [148, 204, 98], [132, 194, 84]];
+    const ids = new Int32Array(lw * lh), hedgePts = new Map();
     for (let j = 0; j < lh; j++) for (let i = 0; i < lw; i++) {
-      const x = i * sc, y = j * sc, wx = x + (env.noise(x / 200, y / 200, seed + 2) - 0.5) * 190, wy = y + (env.noise(x / 200 + 9, y / 200, seed + 3) - 0.5) * 190;
-      const fx = Math.floor(wx / 280), fy = Math.floor(wy / 200);
-      ids[j * lw + i] = (fx * 73856093) ^ (fy * 19349663);
+      const x = i * sc, y = j * sc, wx = x + (env.noise(x / 230, y / 230, seed + 2) - 0.5) * 230, wy = y + (env.noise(x / 230 + 9, y / 230, seed + 3) - 0.5) * 230;
+      ids[j * lw + i] = (Math.floor(wx / 330) * 73856093) ^ (Math.floor(wy / 240) * 19349663);
     }
     for (let j = 0; j < lh; j++) for (let i = 0; i < lw; i++) {
-      const k = j * lw + i, id = ids[k], h = env.hash(id, id >> 3, seed), p = pal[Math.floor(h * pal.length)];
-      const x = i * sc, y = j * sc, n = env.fbm(x / 60, y / 60, seed + 6, 3) - 0.5;
-      let sh = 1 + n * 0.16;
-      if (h > 0.45) { const ang = h * 6.28, s = Math.sin((x * Math.cos(ang) + y * Math.sin(ang)) / 6.5); sh += s * 0.035; }   // mown rows
-      let R = p[0] * sh, G = p[1] * sh, B = p[2] * sh;
+      const k = j * lw + i, id = ids[k], h = env.hash(id, id >> 3, seed), x = i * sc, y = j * sc;
+      let R, G, B, sh = 1 + (env.fbm(x / 110, y / 110, seed + 6, 3) - 0.5) * 0.14;
+      const ang = h * 3.14 + 0.3, along = x * Math.cos(ang) + y * Math.sin(ang);
+      if (h < 0.5 || h > 0.9) { const m = meadow[Math.floor(h * 977) % 4]; [R, G, B] = m; sh += Math.sin(along / 9) * 0.012; }
+      else if (h < 0.72) { const st = Math.sin(along / 2.1) * 0.5 + 0.5; [R, G, B] = [232 - st * 20, 188 - st * 20, 76 - st * 12]; sh += (env.noise(x / 40, y / 40, seed + 8) - 0.5) * 0.1; }
+      else { const st = Math.sin(along / 3.2) * 0.5 + 0.5; [R, G, B] = [118 + st * 30, 176 + st * 24, 62 + st * 14]; }
+      u[k] = 255 << 24 | Math.min(255, B * sh) << 16 | Math.min(255, G * sh) << 8 | Math.min(255, R * sh);
       const edge = (i + 1 < lw && ids[k + 1] !== id) || (j + 1 < lh && ids[k + lw] !== id);
-      if (edge && (ids[k] & 7) < 5) { R *= 0.6; G *= 0.72; B *= 0.55; }
-      u[k] = 255 << 24 | Math.min(255, B) << 16 | Math.min(255, G) << 8 | Math.min(255, R);
+      if (edge && ((id >> 2) & 3) !== 0) { const key = Math.floor(x / 9) + ',' + Math.floor(y / 9); if (!hedgePts.has(key)) hedgePts.set(key, [x, y]); }
     }
     sg.putImageData(img, 0, 0);
     const bg = mk(cw, ch), b = bg.getContext('2d'); b.scale(S, S); b.imageSmoothingEnabled = true; b.drawImage(small, 0, 0, lw * sc, lh * sc);
-    for (let i = 0, n = W * H / 52000; i < n; i++) {                                  // lone trees
-      const x = r() * W, y = r() * H, z = 14 + r() * 12;
-      b.fillStyle = 'rgba(20,40,10,0.25)'; b.beginPath(); b.ellipse(x + z * 0.5, y + z * 0.6, z, z * 0.85, 0, 0, 7); b.fill();
-      const g = b.createRadialGradient(x - z * 0.3, y - z * 0.3, 1, x, y, z);
-      g.addColorStop(0, '#79b84a'); g.addColorStop(1, '#2f6a2e'); b.fillStyle = g; b.beginPath(); b.arc(x, y, z, 0, 7); b.fill();
+    const bush = (x, y, z, dark) => {
+      b.fillStyle = 'rgba(20,45,10,0.28)'; b.beginPath(); b.ellipse(x + z * 0.35, y + z * 0.5, z, z * 0.9, 0, 0, 7); b.fill();
+      const g = b.createRadialGradient(x - z * 0.35, y - z * 0.35, 0.5, x, y, z);
+      g.addColorStop(0, dark ? '#5aa03c' : '#8ccc58'); g.addColorStop(1, dark ? '#2d6a2c' : '#3f8a36'); b.fillStyle = g; b.beginPath(); b.arc(x, y, z, 0, 7); b.fill();
+    };
+    // winding dirt paths
+    for (let q = 0; q < 2; q++) {
+      const y0 = H * (0.3 + q * 0.4) + r() * 60, ph = r() * 6, pts = [];
+      for (let x = -20; x <= W + 20; x += 14) pts.push([x, y0 + Math.sin(x / 280 + ph) * 90 + (env.noise(x / 90, q, seed + 31) - 0.5) * 50]);
+      const tr = (dx, dy) => { b.beginPath(); pts.forEach((p, i) => i ? b.lineTo(p[0] + dx, p[1] + dy) : b.moveTo(p[0] + dx, p[1] + dy)); };
+      b.lineCap = 'round'; b.lineJoin = 'round';
+      tr(1.5, 2); b.strokeStyle = 'rgba(40,60,20,0.22)'; b.lineWidth = 11; b.stroke();
+      tr(0, 0); b.strokeStyle = '#c9b383'; b.lineWidth = 10; b.stroke(); tr(0, -0.5); b.strokeStyle = '#e6d6a8'; b.lineWidth = 6.5; b.stroke();
     }
+    hedgePts.forEach(p => { const z = 5 + r() * 4; bush(p[0] + (r() - 0.5) * 3, p[1] + (r() - 0.5) * 3, z, r() < 0.4); if (r() < 0.5) bush(p[0] + 4 + r() * 4, p[1] + 3 + r() * 4, 4 + r() * 3, r() < 0.4); });
+    for (let i = 0, n = Math.round(W * H / 700000) + 1; i < n; i++) {                 // ponds
+      const x = r() * W, y = r() * H, rx = 36 + r() * 30, ry = rx * (0.55 + r() * 0.2);
+      b.fillStyle = '#7fae5a'; b.beginPath(); b.ellipse(x, y, rx + 5, ry + 5, 0, 0, 7); b.fill();
+      const g = b.createLinearGradient(x - rx, y - ry, x + rx, y + ry); g.addColorStop(0, '#9ad0d6'); g.addColorStop(1, '#4f95a8'); b.fillStyle = g; b.beginPath(); b.ellipse(x, y, rx, ry, 0, 0, 7); b.fill();
+      b.strokeStyle = 'rgba(255,255,255,0.35)'; b.lineWidth = 1.5; b.beginPath(); b.ellipse(x - 4, y - 3, rx * 0.55, ry * 0.4, 0, 3.6, 5.3); b.stroke();
+      for (let q = 0; q < 5; q++) bush(x + (r() - 0.5) * rx * 2.1, y + ry * (r() < 0.5 ? 1 : -1) * 1.05, 3 + r() * 3, true);
+    }
+    for (let i = 0, n = Math.round(W * H / 900000) + 1; i < n; i++) {                 // farm buildings
+      const x = 60 + r() * (W - 120), y = 60 + r() * (H - 120), w = 40 + r() * 16, h = 26 + r() * 10, barn = r() < 0.5, roof = barn ? '#b8402e' : '#c8553a';
+      b.fillStyle = 'rgba(20,40,10,0.3)'; b.fillRect(x - w / 2 + 5, y - h / 2 + 7, w, h);
+      b.fillStyle = roof; b.fillRect(x - w / 2, y - h / 2, w, h);
+      b.fillStyle = 'rgba(0,0,0,0.18)'; b.fillRect(x - w / 2, y, w, h / 2);
+      b.fillStyle = 'rgba(255,255,255,0.25)'; b.fillRect(x - w / 2, y - h / 2, w, 3);
+      b.strokeStyle = '#8c2e20'; b.lineWidth = 1.2; b.beginPath(); b.moveTo(x - w / 2, y); b.lineTo(x + w / 2, y); b.stroke();
+      if (!barn) { b.fillStyle = '#efe6d0'; b.fillRect(x + w / 2 - 12, y - h / 2 - 8, 12, 8); b.fillStyle = '#a8503a'; b.fillRect(x + w / 2 - 12, y - h / 2 - 10, 12, 3); }
+    }
+    for (let i = 0, n = W * H / 38000; i < n; i++) {                                  // round trees with highlights
+      const x = r() * W, y = r() * H, z = 16 + r() * 15, dark = r() < 0.4;
+      b.fillStyle = 'rgba(20,45,10,0.28)'; b.beginPath(); b.ellipse(x + z * 0.45, y + z * 0.65, z, z * 0.85, 0, 0, 7); b.fill();
+      const g = b.createRadialGradient(x - z * 0.4, y - z * 0.4, 1, x, y, z); g.addColorStop(0, dark ? '#6fb34a' : '#9fd866'); g.addColorStop(1, dark ? '#2b6a2c' : '#3f8c36'); b.fillStyle = g; b.beginPath(); b.arc(x, y, z, 0, 7); b.fill();
+      for (let q = 0; q < 5; q++) { b.fillStyle = 'rgba(210,245,150,0.22)'; b.beginPath(); b.arc(x - z * 0.3 + (r() - 0.5) * z * 0.7, y - z * 0.3 + (r() - 0.5) * z * 0.7, z * 0.2, 0, 7); b.fill(); }
+    }
+    this._bush = bush;
     this._bg = bg;
 
     // ---- meadow grass texture: mottled green, soft stripes, tufts, flowers
@@ -197,22 +229,20 @@ IconIsland.theme({
       gr.addColorStop(0, `rgba(255,248,190,${0.3 * ic.a})`); gr.addColorStop(1, 'rgba(255,248,190,0)'); o.fillStyle = gr; o.fillRect(cx - r, cy - r, r * 2, r * 2);
     }
     const lines = this._fenceLines();
-    o.lineCap = 'round'; o.lineJoin = 'round';
-    const trace = (line, dx, dy) => { o.beginPath(); line.forEach((p, i) => i ? o.lineTo(p[0] + dx, p[1] + dy) : o.moveTo(p[0] + dx, p[1] + dy)); };
+    const bush = (x, y, z, dark) => {
+      o.fillStyle = 'rgba(20,45,10,0.3)'; o.beginPath(); o.ellipse(x + z * 0.35, y + z * 0.55, z, z * 0.9, 0, 0, 7); o.fill();
+      const g = o.createRadialGradient(x - z * 0.35, y - z * 0.35, 0.5, x, y, z);
+      g.addColorStop(0, dark ? '#5aa03c' : '#8ccc58'); g.addColorStop(1, dark ? '#2d6a2c' : '#3f8a36'); o.fillStyle = g; o.beginPath(); o.arc(x, y, z, 0, 7); o.fill();
+    };
     for (const line of lines) {
       if (line.length < 3) continue;
-      trace(line, 2.2, 3); o.strokeStyle = 'rgba(15,35,10,0.28)'; o.lineWidth = 5; o.stroke();
-      trace(line, 0, 0); o.strokeStyle = '#7a5530'; o.lineWidth = 3.6; o.stroke();
-      o.strokeStyle = '#b98d58'; o.lineWidth = 1.5; trace(line, -0.4, -0.5); o.stroke();
-      let acc = 0, nextPost = 6;                                        // posts every ~22 px
+      let acc = 0, next = 0;                                           // a bush roughly every 6 px along the contour
       for (let i = 1; i < line.length; i++) {
-        const a = line[i - 1], b = line[i], seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const a = line[i - 1], bb = line[i], seg = Math.hypot(bb[0] - a[0], bb[1] - a[1]);
         acc += seg;
-        if (acc >= nextPost) {
-          nextPost = acc + 22;
-          o.fillStyle = 'rgba(15,35,10,0.3)'; o.beginPath(); o.arc(b[0] + 1.8, b[1] + 2.4, 3.2, 0, 7); o.fill();
-          o.fillStyle = '#5a3e22'; o.beginPath(); o.arc(b[0], b[1], 3.1, 0, 7); o.fill();
-          o.fillStyle = '#c9a06a'; o.beginPath(); o.arc(b[0] - 0.6, b[1] - 0.7, 1.5, 0, 7); o.fill();
+        if (acc >= next) {
+          const hh = env.hash(Math.round(bb[0] / 5), Math.round(bb[1] / 5), 77), hh2 = env.hash(Math.round(bb[0] / 5), Math.round(bb[1] / 5), 78);
+          bush(bb[0], bb[1], 5.5 + hh * 3.5, hh2 < 0.4); next = acc + 5 + hh2 * 3;
         }
       }
     }
