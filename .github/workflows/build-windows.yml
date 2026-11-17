@@ -1,0 +1,40 @@
+name: Build Windows installer
+
+# Bouwt IconIsland-<versie>-win-x64-Setup.exe op een Windows-server van GitHub
+# en zet hem onder "Releases" (tag "latest"). Start automatisch bij elke push naar main,
+# of handmatig via Actions -> "Build Windows installer" -> Run workflow.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build installer
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1
+
+      - name: Upload as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IconIsland-Setup
+          path: |
+            dist/IconIsland-*-Setup.exe
+            dist/IconIsland-*-Setup.exe.sha256
+
+      - name: Publish release "latest"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/IconIsland-*-Setup.exe dist/IconIsland-*-Setup.exe.sha256 \
+            --title "Icon Island (latest build)" \
+            --notes "Automatische build van commit ${GITHUB_SHA::7}. Download het Setup.exe-bestand hieronder. De installer is niet ondertekend: Windows SmartScreen kan een waarschuwing tonen (Meer info > Toch uitvoeren)."
