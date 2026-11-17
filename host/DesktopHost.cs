@@ -757,6 +757,7 @@ class HostContext : ApplicationContext
                 f.RecordProgress += delegate(string p) { if (settingsWin != null) settingsWin.Post("{\"t\":\"recProgress\",\"p\":" + p + "}"); };
             }
             f.HandleDestroyed += OnFormGone;
+            f.Previous = forms.Count > 0 ? forms[forms.Count - 1] : null;
             forms.Add(f);
             f.Show();
         }
@@ -1007,6 +1008,7 @@ class WallpaperForm : Form
     protected override bool ShowWithoutActivation { get { return true; } }
 
     public readonly bool IsPrimary;
+    public WallpaperForm Previous;      // the window of the previous monitor (z-order chain)
 
     public WallpaperForm(string pageDir, string page, bool manualPause, Rectangle bounds, bool primary)
     {
@@ -1285,9 +1287,14 @@ class WallpaperForm : Form
     {
         if (!raised || zAnchor == IntPtr.Zero || !Native.IsWindow(zAnchor)) return;
         bool fixedAny = false;
-        if (Native.GetWindow(zAnchor, 2 /* GW_HWNDNEXT */) != Handle)
+        // With several monitors every window needs its own slot: the first sits right above the anchor, each next
+        // one right above the previous window. If they all fought for the same slot they would keep reordering
+        // each other (each reorder triggers the other's hook), which shows up as a short flicker.
+        IntPtr anchor = zAnchor;
+        if (Previous != null && Previous.IsHandleCreated && !Previous.shuttingDown && Native.IsWindow(Previous.Handle)) anchor = Previous.Handle;
+        if (Native.GetWindow(anchor, 2 /* GW_HWNDNEXT */) != Handle)
         {
-            Native.SetWindowPos(Handle, zAnchor, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
+            Native.SetWindowPos(Handle, anchor, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
             fixedAny = true;
         }
         if (AttachMode == "progman")

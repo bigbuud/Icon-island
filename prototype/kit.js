@@ -98,7 +98,11 @@ const IconIsland = (() => {
   }
 
   // ---------- canvas ----------
-  function resize() {
+  // Changing canvas.width clears the canvas. Doing it in the resize event could leave one blank frame on screen
+  // (the next draw is up to 33 ms away), so the size change is applied inside draw(), right before painting.
+  let pendingResize = false;
+  function applyResize() {
+    pendingResize = false;
     W = innerWidth; H = innerHeight;
     const dpr = window.devicePixelRatio || 1;
     const s = PREVIEW ? 0.45 : Math.min(dpr, 1);
@@ -107,11 +111,13 @@ const IconIsland = (() => {
     cv.width = Math.max(2, Math.round((box.width || W) * s)); cv.height = Math.max(2, Math.round((box.height || H) * s));
     cacheOK = false;
   }
+  function resize(now) { if (now) { pendingResize = true; W = innerWidth; H = innerHeight; } else applyResize(); }
 
   function draw(now) {
     const dt = lastNow ? Math.min((now - lastNow) / 1000, 0.1) : 0.016;
     lastNow = now;
     stepIcons(dt);
+    if (pendingResize) applyResize();
     const S = cv._scale || 1;
     if (cv.width !== lw || cv.height !== lh || S !== ls || !cacheOK) {
       lw = cv.width; lh = cv.height; ls = S; cacheOK = true;
@@ -172,7 +178,7 @@ const IconIsland = (() => {
     for (const k in def.params || {}) { DEFAULTS[k] = def.params[k]; P[k] = def.params[k]; }
     document.body.classList.add(WALL ? 'wall' : 'free');
     resize();
-    addEventListener('resize', () => { resize(); if (theme.init) theme.init(env, seed); });
+    addEventListener('resize', () => { resize(true); if (theme.init) theme.init(env, seed); });
     if (theme.init) theme.init(env, seed);
     if (WALL || PREVIEW) {
       if (PREVIEW) {

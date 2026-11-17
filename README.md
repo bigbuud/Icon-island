@@ -14,7 +14,7 @@ Icon Island is a free fork of [Deskland Preview](https://github.com/BLEZZ0102/De
 ## What changed in this fork
 
 - **All monitors:** one wallpaper window per display, each adapting to the icons that sit on that display. Plug or unplug a monitor and the layout rebuilds itself. Tray → *Use all monitors* switches back to primary-only.
-- **Seven free themes:** Beach and Meadow (original) plus five new ones — **Aurora**, **Sky** (day / dusk / night), **Ocean**, **Forest** (summer / autumn / spring) and **Lotus pond**. The new themes are original work built on the shared `prototype/kit.js` framework.
+- **Seven free themes:** Beach and Meadow (original) plus five new ones — **Aurora**, **Sky** (day / dusk / night), **Pasture**, **Forest** (summer / autumn / spring) and **Lotus pond**. The new themes are original work built on the shared `prototype/kit.js` framework.
 - **No locked content:** the 11 placeholder "locked" cards, the purchase dialog and the website link were removed.
 
 ## Themes
@@ -25,8 +25,8 @@ Icon Island is a free fork of [Deskland Preview](https://github.com/BLEZZ0102/De
 | Meadow | Drifting clouds and shadows, a boy flying a kite and a little black cat. |
 | Aurora | Northern lights over a snowy ridge; icons become glowing lights joined by constellation lines. |
 | Sky | Cartoon clouds that icons sit on; day, dusk or night. |
-| Ocean | Top-down sea; every icon is an island ringed by shallows and foam. |
-| Forest | Gouache canopy with clearings around icons; three seasons. |
+| Pasture | Patchwork fields; every group of icons gets its own fenced meadow with grazing cows and horses. |
+| Forest | Gouache forest of broadleaf, spruce, pine and birch with roaming deer, boar, foxes and rabbits (summer / autumn / spring). |
 | Lotus pond | Lily pads, lotus flowers and koi that swim between icons. |
 
 ## Requirements

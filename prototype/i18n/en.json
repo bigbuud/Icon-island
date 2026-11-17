@@ -11,16 +11,16 @@
     "autostart": "Start with Windows",
     "autostartTitle": "Run Icon Island automatically when you sign in",
     "autostartBlocked": "Start with Windows may have been blocked",
-    "autostartWarnSw": "Icon Island didn't start automatically this time — {sw} may have blocked it. Open {sw}, find Icon Island in its startup manager and set it to Allow.",
-    "autostartWarnGeneric": "Icon Island didn't start automatically this time — your security software or the Windows Startup apps setting may have blocked it. Turn Icon Island on in your security software's startup manager, or in Windows Settings → Apps → Startup.",
+    "autostartWarnSw": "Icon Island didn't start automatically this time \u2014 {sw} may have blocked it. Open {sw}, find Icon Island in its startup manager and set it to Allow.",
+    "autostartWarnGeneric": "Icon Island didn't start automatically this time \u2014 your security software or the Windows Startup apps setting may have blocked it. Turn Icon Island on in your security software's startup manager, or in Windows Settings \u2192 Apps \u2192 Startup.",
     "gotIt": "Got it",
     "updateAvailable": "Update available",
     "updateVersion": "Icon Island {version} is ready. Your current theme and settings will be kept.",
     "updateProgram": "Update now",
     "updateRetry": "Retry update",
-    "updateWorking": "Updating…",
-    "updateDownloading": "Downloading and installing… {progress}",
-    "updateInstalling": "Installing the update… {progress}",
+    "updateWorking": "Updating\u2026",
+    "updateDownloading": "Downloading and installing\u2026 {progress}",
+    "updateInstalling": "Installing the update\u2026 {progress}",
     "updateCompletedTitle": "Update complete",
     "updateCompleted": "The update has been downloaded and installed. If Icon Island does not restart automatically, open it again.",
     "updateDone": "Done",
@@ -31,7 +31,7 @@
     "updateStoreRequired": "This update method is only available in the Microsoft Store edition.",
     "updateFailed": "The update failed. Check your connection or Microsoft Store and try again.",
     "updateCheckingTitle": "Checking for updates",
-    "updateChecking": "Connecting to the update server and checking for a new version…",
+    "updateChecking": "Connecting to the update server and checking for a new version\u2026",
     "updateFailedTitle": "Update not completed",
     "updateCheckFailedTitle": "Couldn't check for updates",
     "networkTimeout": "The connection or download timed out. Check your network, proxy or firewall and try again. If other websites work, the server may also be responding slowly.",
@@ -43,27 +43,27 @@
     "serverInvalid": "The server returned an unrecognized response. Try again later or contact support if this continues.",
     "downloadInvalid": "The download was incomplete or failed security verification, so installation was stopped. Try again or contact support if this keeps happening.",
     "livePreview": "Live preview",
-    "previewIcons": "Live preview · using the {n} icons on your desktop",
-    "previewNoIcons": "Live preview · desktop icons are hidden",
+    "previewIcons": "Live preview \u00b7 using the {n} icons on your desktop",
+    "previewNoIcons": "Live preview \u00b7 desktop icons are hidden",
     "refresh": "Refresh",
     "refreshTitle": "Generate a new scene for this theme",
     "shareImage": "Share image",
     "shareImageTitle": "Share your desktop image while protecting your privacy",
     "shareVideo": "Share video",
     "shareVideoTitle": "Share your desktop animation while protecting your privacy",
-    "generating": "Generating…",
-    "preparingRec": "Getting ready…",
+    "generating": "Generating\u2026",
+    "preparingRec": "Getting ready\u2026",
     "recording": "Recording {p}%",
-    "savingVideo": "Saving…",
+    "savingVideo": "Saving\u2026",
     "shareFailImage": "Couldn't create the image: {msg}",
     "shareFailVideo": "Couldn't record the video: {msg}",
     "unknownReason": "unknown error",
     "shareReadyImage": "Your desktop picture is ready",
     "shareReadyVideo": "Your desktop clip is ready",
     "sharePrivacy": "Icons are replaced with sample icons and file names with color blocks, so none of your files are shown.",
-    "shareCopiedImage": "The image is on your clipboard — paste it straight into a chat or a post.",
-    "shareCopiedVideo": "The video file is on your clipboard — paste it into a chat window to send it.",
-    "shareBrowserHint": " (Browser preview: click “{btn}” to download.)",
+    "shareCopiedImage": "The image is on your clipboard \u2014 paste it straight into a chat or a post.",
+    "shareCopiedVideo": "The video file is on your clipboard \u2014 paste it into a chat window to send it.",
+    "shareBrowserHint": " (Browser preview: click \u201c{btn}\u201d to download.)",
     "savedTo": "Saved to {path}",
     "openFolder": "Show in folder",
     "openImage": "Open image",
@@ -73,7 +73,7 @@
     "ok": "OK",
     "sharePreviewAlt": "Preview of the shared image",
     "autosave": "Changes are saved automatically and applied to your desktop right away",
-    "saved": "Saved ✓",
+    "saved": "Saved \u2713",
     "resetAll": "Reset all",
     "resetAllTitle": "Reset all settings of this theme to their defaults",
     "helpButtonTitle": "Common questions and troubleshooting",
@@ -81,8 +81,8 @@
     "helpSubtitle": "Common questions and troubleshooting",
     "helpWallpaperQ": "Icon Island keeps flickering or restarting. How do I fix it?",
     "helpWallpaperA": "If your regular Windows wallpaper changes automatically, each change can make Icon Island flicker or restart. Use a fixed background that does not rotate.",
-    "helpWallpaperStep1": "Open Windows Settings → Personalization → Background.",
-    "helpWallpaperStep2": "Set ‘Personalize your background’ to ‘Picture’ or ‘Solid color’. Do not use ‘Slideshow’ or ‘Windows spotlight’.",
+    "helpWallpaperStep1": "Open Windows Settings \u2192 Personalization \u2192 Background.",
+    "helpWallpaperStep2": "Set \u2018Personalize your background\u2019 to \u2018Picture\u2019 or \u2018Solid color\u2019. Do not use \u2018Slideshow\u2019 or \u2018Windows spotlight\u2019.",
     "helpWallpaperStep3": "Restart Icon Island after changing this setting.",
     "badgeOn": "In use",
     "badgeReady": "Available",
@@ -96,7 +96,7 @@
     "comingSoon": "Coming soon:"
   },
   "host": {
-    "traySettings": "Settings…",
+    "traySettings": "Settings\u2026",
     "trayPause": "Pause animation",
     "trayReload": "Reload",
     "trayAutostart": "Start with Windows",
@@ -265,39 +265,12 @@
         }
       }
     },
-    "ocean": {
-      "name": "Ocean",
-      "desc": "A top-down blue sea where every icon becomes a small island ringed by shallows and foam, with the odd sailboat passing",
-      "groups": [
-        "Islands",
-        "Sea"
-      ],
-      "params": {
-        "shore": {
-          "label": "Shallows width",
-          "hint": "How wide the shallow water around icons is",
-          "unit": "px"
-        },
-        "wave": {
-          "label": "Wave speed",
-          "hint": "How fast the waves move"
-        },
-        "boats": {
-          "label": "Sailboats",
-          "hint": "Boats that sail past now and then",
-          "options": [
-            "Hide",
-            "Show"
-          ]
-        }
-      }
-    },
     "forest": {
       "name": "Forest",
-      "desc": "A gouache forest where your icons sit in clearings and the canopy sways. Summer, autumn or spring",
+      "desc": "A gouache forest of broadleaf, spruce, pine and birch where your icons sit in clearings. Deer, boar and foxes roam. Summer, autumn or spring",
       "groups": [
         "Trees",
-        "Season"
+        "Season & wildlife"
       ],
       "params": {
         "density": {
@@ -307,6 +280,10 @@
         "sway": {
           "label": "Sway",
           "hint": "How strongly the canopy sways in the wind"
+        },
+        "wildlife": {
+          "label": "Wildlife",
+          "hint": "Deer, boar, foxes and rabbits roaming the glades"
         },
         "season": {
           "label": "Season",
@@ -342,6 +319,28 @@
             "Off",
             "On"
           ]
+        }
+      }
+    },
+    "pasture": {
+      "name": "Pasture",
+      "desc": "Patchwork fields seen from above. Every group of icons gets its own fenced meadow where cows and horses graze",
+      "groups": [
+        "Animals",
+        "Meadow"
+      ],
+      "params": {
+        "animals": {
+          "label": "Animals",
+          "hint": "How many cows and horses graze in each meadow"
+        },
+        "mix": {
+          "label": "Horses",
+          "hint": "Share of horses among the animals (0 = only cows)"
+        },
+        "flowers": {
+          "label": "Flowers",
+          "hint": "How many wild flowers grow in the grass"
         }
       }
     }

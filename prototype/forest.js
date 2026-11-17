@@ -1,7 +1,8 @@
 // Thema "Forest": gouache-bos. Iconen = open plekken in het bladerdak; bomen krimpen en schuiven weg,
 // licht valt in de open plek, paddenstoelen groeien aan de rand, vlinders cirkelen om de iconen.
 IconIsland.theme({
-  params: { density: 0.7, sway: 1, season: 0 },
+  params: { density: 0.7, sway: 1, season: 0, wildlife: 1 },
+  _herd: null, _wbal: 0,
 
   _trees: [], _shrooms: [], _leaves: [], _flies: [], _sprites: [], _ground: null, _spot: null,
   _key: '', _wt: 0, _bird: { t0: 5, y: 0.3 },
@@ -35,7 +36,7 @@ IconIsland.theme({
     this._shrooms = Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H, z: 0.8 + r() * 0.6, n: 1 + Math.floor(r() * 3), o: r() * 6 }));
     this._leaves = Array.from({ length: 30 }, () => ({ x: r() * W, y: r() * H, ph: r() * 6.28, z: 3 + r() * 3, c: Math.floor(r() * 4), vy: 20 + r() * 22 }));
     this._flies = [{ x: W * 0.4, y: H * 0.5, o: 0 }, { x: W * 0.6, y: H * 0.4, o: 2.4 }];
-    this._seed = seed; this._key = '';
+    this._seed = seed; this._key = ''; this._herd = new Fauna.Herd();
   },
 
   rebuild(env) {
@@ -71,6 +72,8 @@ IconIsland.theme({
     for (let v = 0; v < 12; v++) {
       const pal = SE.pals[v % SE.pals.length], rr = env.rng((this._seed || 1) * 13 + v + 1);
       const sc = mk(150 * S, 150 * S), c = sc.getContext('2d'); c.scale(S, S); c.lineCap = 'round';
+      const species = v < 6 ? 'broad' : v < 9 ? 'spruce' : v < 11 ? 'pine' : 'birch';
+      if (species !== 'broad') { this._conifer(c, species, rr, SE, season); this._sprites.push(sc); continue; }
       const cx = 75, cy = 70, N = 9, lobes = [];
       for (let i = 0; i < N; i++) { const a = i / N * 6.283 + rr() * 0.5; lobes.push({ a, d: 0.5 + rr() * 0.18, k: 0.4 + rr() * 0.13 }); }
       const blob = (ox, oy, sc2, col, al) => {
@@ -105,6 +108,43 @@ IconIsland.theme({
     s.fillStyle = sg; s.fillRect(0, 0, 64, 64); this._spot = sp;
   },
 
+  // spruce (layered spiky star), pine (umbrella of needle tufts) and birch (small light canopy) sprites; same 150x150 frame as broadleaf
+  _conifer(c, kind, rr, SE, season) {
+    const cx = 75, cy = 70, line = (x1, y1, x2, y2, col, w, al) => { c.globalAlpha = al; c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); };
+    c.globalAlpha = 0.3; c.fillStyle = '#0c1c0c'; c.beginPath(); c.ellipse(cx + 12, cy + 15, kind === 'birch' ? 44 : 52, kind === 'birch' ? 40 : 48, 0, 0, 7); c.fill();
+    if (kind === 'spruce') {
+      const cols = season === 1 ? ['#1d3a2a', '#2c5538', '#437449', '#6d9a62'] : ['#123628', '#1e5036', '#34744a', '#63a56c'];
+      const tiers = [[52, 15, 0], [40, 13, 0.2], [29, 11, 0.4], [18, 9, 0.1]];
+      tiers.forEach((t, ti) => {
+        const R = t[0], N = t[1], rot = t[2] + rr() * 0.3;
+        c.globalAlpha = 1; c.fillStyle = cols[Math.min(ti, 3)]; c.beginPath();
+        for (let i = 0; i < N * 2; i++) { const a = i / (N * 2) * 6.283 + rot, rad = i % 2 ? R * 0.58 : R * (0.92 + rr() * 0.12); c[i ? 'lineTo' : 'moveTo'](cx - ti * 2 + Math.cos(a) * rad, cy - ti * 2 + Math.sin(a) * rad); }
+        c.closePath(); c.fill();
+        for (let i = 0; i < N; i++) { const a = i / N * 6.283 + rot + 0.12; line(cx - ti * 2, cy - ti * 2, cx - ti * 2 + Math.cos(a) * R * 0.85, cy - ti * 2 + Math.sin(a) * R * 0.85, cols[3], 1.6, 0.35); }
+      });
+      c.globalAlpha = 0.8; c.fillStyle = cols[3]; c.beginPath(); c.arc(cx - 8, cy - 8, 3.5, 0, 7); c.fill();
+    } else if (kind === 'pine') {
+      const cols = season === 1 ? ['#2c4a26', '#4a6a34', '#7d9647', '#b4c46a'] : ['#1f4a2c', '#37703c', '#5d9a4a', '#a3cf72'];
+      for (let l = 0; l < 3; l++) {
+        const R = 46 - l * 8, n = 6 + l * 2;
+        for (let i = 0; i < n; i++) {
+          const a = i / n * 6.283 + rr() * 0.6 + l, d = R * (0.45 + rr() * 0.3) * (l === 2 ? 0.5 : 1), x = cx - l * 3 + Math.cos(a) * d, y = cy - l * 3 + Math.sin(a) * d, r0 = 15 + rr() * 6 - l * 2;
+          c.globalAlpha = 1; c.fillStyle = cols[l]; c.beginPath(); c.arc(x, y, r0, 0, 7); c.fill();
+          for (let q = 0; q < 14; q++) { const b = rr() * 6.283, l2 = r0 * (0.5 + rr() * 0.6); line(x, y, x + Math.cos(b) * l2, y + Math.sin(b) * l2, rr() < 0.5 ? cols[l + 1 > 3 ? 3 : l + 1] : cols[l], 1.3, 0.55); }
+        }
+      }
+      c.globalAlpha = 0.7; c.fillStyle = cols[3]; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(cx - 14 + rr() * 16, cy - 16 + rr() * 14, 2 + rr() * 2, 0, 7); c.fill(); }
+    } else {
+      const pals = [['#4f8a3a', '#7db84e', '#a9d96a', '#d5f08c'], ['#c78a1c', '#e8b630', '#f4d25a', '#fff0a0'], ['#7ab648', '#a3cf6a', '#c8ec92', '#eaffc0']], cols = pals[season] || pals[0];
+      for (let l = 0; l < 3; l++) {
+        const R = 40 - l * 9;
+        for (let i = 0; i < 10 + l * 2; i++) { const a = rr() * 6.283, d = Math.sqrt(rr()) * R * 0.75, r0 = 10 + rr() * 7 - l * 2; c.globalAlpha = 1; c.fillStyle = cols[l]; c.beginPath(); c.arc(cx - l * 4 + Math.cos(a) * d, cy - l * 4 + Math.sin(a) * d, r0, 0, 7); c.fill(); }
+      }
+      for (let i = 0; i < 50; i++) { const a = rr() * 6.283, d = Math.sqrt(rr()) * 36, x = cx - 6 + Math.cos(a) * d, y = cy - 8 + Math.sin(a) * d; c.globalAlpha = 0.5 + rr() * 0.4; c.fillStyle = cols[3]; c.beginPath(); c.ellipse(x, y, 2.5 + rr() * 2, 1.6 + rr() * 1.5, rr() * 3, 0, 7); c.fill(); }
+    }
+    c.globalAlpha = 1;
+  },
+
   frame(ctx, t, dt, env) {
     const { W, H, P, S } = env, icons = env.icons, season = P.season | 0, SE = this.SEASONS[season] || this.SEASONS[0];
     const clamp = env.clamp, sm = env.smooth;
@@ -130,7 +170,36 @@ IconIsland.theme({
       ctx = main;
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(L, 0, 0); ctx.setTransform(S, 0, 0, S, 0, 0);
+    this._wildlife(ctx, t, dt, env);
     this._after(ctx, t, dt, env, SE);
+  },
+
+  // deer, boar, fox and rabbits roam the glades around the icons
+  _open(env, x, y) {
+    const d = env.dist(x, y), clamp = env.clamp;
+    return clamp((d - 26) / 14, 0, 1) * clamp((150 - d) / 25, 0, 1) * clamp((x + 30) / 30, 0, 1) * clamp((env.W + 30 - x) / 30, 0, 1) * clamp((y + 30) / 30, 0, 1) * clamp((env.H + 30 - y) / 30, 0, 1);
+  },
+  _spawnPoint(env) {
+    const n = env.icons.length; if (!n) return null;
+    for (let k = 0; k < 40; k++) {
+      const ic = env.icons[Math.floor(Math.random() * n)], a = Math.random() * 6.283, dd = 50 + Math.random() * 90;
+      const x = ic.x + ic.w / 2 + Math.cos(a) * (ic.w / 2 + dd), y = ic.y + ic.h / 2 + Math.sin(a) * (ic.h / 2 + dd);
+      if (this._open(env, x, y) > 0.9) return { x, y };
+    }
+    return null;
+  },
+  _wildlife(ctx, t, dt, env) {
+    const herd = this._herd, n = env.icons.length, P = env.P;
+    if (!herd) return;
+    this._wbal -= dt;
+    if (this._wbal <= 0) {
+      this._wbal = 1.5;
+      const want = n && P.wildlife > 0 ? Math.round(P.wildlife * Math.min(9, 2 + n * 0.3)) : 0, live = herd.list.filter(a => !a.leaving);
+      if (live.length < want) { const p = this._spawnPoint(env); if (p) { const r = Math.random(); herd.add(r < 0.38 ? 'deer' : r < 0.58 ? 'boar' : r < 0.72 ? 'fox' : 'rabbit', p.x, p.y, true); } }
+      else if (live.length > want) live[Math.floor(Math.random() * live.length)].leaving = true;
+    }
+    herd.step(dt, t, (x, y) => this._open(env, x, y), () => this._spawnPoint(env));
+    herd.draw(ctx, t);
   },
 
   _drawTrees(ctx, env, wt, amp, k, dens, n) {
@@ -141,7 +210,7 @@ IconIsland.theme({
         const ic = icons[i], dx = Math.max(ic.x - tr.x, 0, tr.x - (ic.x + ic.w)), dy = Math.max(ic.y - tr.y, 0, tr.y - (ic.y + ic.h)), dd = Math.hypot(dx, dy) + (1 - ic.a) * 80;
         if (dd < d) { d = dd; ax = tr.x - (ic.x + ic.w / 2); ay = tr.y - (ic.y + ic.h / 2); }
       }
-      const clear = sm(clamp((d - 6 - tr.r * 0.2) / tr.r, 0, 1)), target = clear * clamp((dens - tr.th) * 10, 0, 1);
+      const clear = sm(clamp((d - 26 - tr.r * 0.22) / tr.r, 0, 1)), target = clear * clamp((dens - tr.th) * 10, 0, 1);
       if (tr.s < 0) tr.s = target; else tr.s += (target - tr.s) * k;
       const s = tr.s;
       if (s < 0.015 || tr.x < -80 || tr.y < -80 || tr.x > W + 80 || tr.y > H + 80) continue;

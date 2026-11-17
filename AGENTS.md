@@ -1,7 +1,7 @@
 # Icon Island development notes
 
 - Communicate in the language the project owner uses (Dutch or English).
-- This fork is completely free: seven themes (Beach, Meadow, Aurora, Sky, Ocean, Forest, Lotus pond) are all available. There are no locked themes, purchase UI or license checks. New themes are built on `prototype/kit.js` (the contract is described at the top of that file).
+- This fork is completely free: seven themes (Beach, Meadow, Aurora, Sky, Pasture, Forest, Lotus pond) are all available. There are no locked themes, purchase UI or license checks. New themes are built on `prototype/kit.js` (the contract is described at the top of that file).
 - Multi-monitor: one `WallpaperForm` per monitor (primary first). Icons are assigned to the monitor that contains their centre point. A monitor layout change rebuilds all windows. The tray item "Use all monitors" switches back to primary-only.
 - The UI is English only.
 - No account sign-in, purchase restore or automatic update checks; no licensing service, update manifest or store integration.
