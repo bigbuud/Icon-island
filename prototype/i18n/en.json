@@ -324,7 +324,7 @@
     },
     "pasture": {
       "name": "Pasture",
-      "desc": "Patchwork fields seen from above. Every group of icons gets its own fenced meadow where cows and horses graze",
+      "desc": "Patchwork fields seen from above. Every group of icons gets its own hedged meadow, while cows and horses graze in the open fields",
       "groups": [
         "Animals",
         "Meadow"
@@ -332,7 +332,7 @@
       "params": {
         "animals": {
           "label": "Animals",
-          "hint": "How many cows and horses graze in each meadow"
+          "hint": "How many cows and horses graze in the open fields"
         },
         "mix": {
           "label": "Horses",
