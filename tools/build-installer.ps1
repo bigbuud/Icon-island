@@ -39,13 +39,13 @@ $sources = @('.gitattributes', '.gitignore', 'AGENTS.md', 'LICENSE', 'NOTICE', '
     'host\DesktopHost.cs', 'host\IconIsland.ico', 'host\README.md', 'host\app.manifest', 'host\build.ps1', 'host\inspect.ps1',
     'tools\build-installer.ps1', 'tools\installer.nsi', 'tools\version.json')
 $themeFiles = @('flat.html', 'meadow.html', 'settings.html', 'thumbs-data.js', 'logo.svg', 'share.js', 'serve.mjs', 'themes.json', 'beach-palms.js', 'meadow-boy.js', 'meadow-cat.js', 'kit.js', 'kit.css',
-    'aurora.html', 'aurora.js', 'sky.html', 'sky.js', 'pasture.html', 'pasture.js', 'animals.js', 'zones.js', 'playground.html', 'playground.js', 'desert.html', 'desert.js', 'winter.html', 'winter.js', 'reef.html', 'reef.js', 'forest.html', 'forest.js', 'lotus.html', 'lotus.js',
+    'aurora.html', 'aurora.js', 'sky.html', 'sky.js', 'pasture.html', 'pasture.js', 'animals.js', 'zones.js', 'playground.html', 'playground.js', 'desert.html', 'desert.js', 'winter.html', 'winter.js', 'reef.html', 'reef.js', 'medieval.html', 'medieval.js', 'forest.html', 'forest.js', 'lotus.html', 'lotus.js',
     'i18n\en.json', 'thumbs\beach.webp', 'thumbs\meadow.webp',
     'assets\beach-coconut-palm-v2.png', 'assets\beach-coconut-palm-curved.png', 'assets\beach-coconut-palm-airy.png', 'assets\beach-coconut-palm-windswept.png', 'assets\beach-coconut-palm-arch.png',
     'assets\meadow-black-kitten.png', 'assets\meadow-kite-boy-level-face.png', 'assets\meadow-kite-boy-diagonal-run.png')
 $themes = (Get-Content -LiteralPath (Join-Path $root 'prototype\themes.json') -Raw -Encoding UTF8 | ConvertFrom-Json).themes
 $ready = @($themes | Where-Object { $_.status -eq 'ready' -and $_.product -eq 'free' })
-if ($themes.Count -ne 11 -or $ready.Count -ne 11) { throw 'Expected eleven free, ready themes' }
+if ($themes.Count -ne 12 -or $ready.Count -ne 12) { throw 'Expected twelve free, ready themes' }
 foreach ($theme in $themes) {
     if (-not $theme.page -or -not $theme.groups) { throw 'Theme without page or settings: ' + $theme.id }
     if ($themeFiles -notcontains $theme.page) { throw 'Theme page missing from the package list: ' + $theme.page }

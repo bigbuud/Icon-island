@@ -632,6 +632,45 @@
           ]
         }
       ]
+    },
+    {
+      "id": "medieval",
+      "adaptive": true,
+      "name": "Medieval village",
+      "desc": "A side-view village. Every group of icons becomes a timber-framed house or a stone tower, with villagers, knights, a horse and cart, chickens and a dog in the street, a windmill on the hill and a sky that turns to dusk and night",
+      "page": "medieval.html",
+      "status": "ready",
+      "product": "free",
+      "thumb": "url(thumbs/medieval-open.webp?v=1) center / cover no-repeat, linear-gradient(180deg,#5aaee8,#a7bdd8)",
+      "thumbSource": "custom",
+      "groups": [
+        {
+          "name": "Village",
+          "params": [
+            {
+              "key": "villagers",
+              "label": "Villagers",
+              "hint": "How many people, animals and carts roam the street",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "time",
+              "label": "Time of day",
+              "hint": "Day, dusk or night (the windows light up)",
+              "options": [
+                "Day",
+                "Dusk",
+                "Night"
+              ],
+              "default": 0
+            }
+          ]
+        }
+      ]
     }
   ]
 }

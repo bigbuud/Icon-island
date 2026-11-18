@@ -435,6 +435,28 @@
           "hint": "Strength of the light patterns dancing on the sea floor"
         }
       }
+    },
+    "medieval": {
+      "name": "Medieval village",
+      "desc": "A side-view village. Every group of icons becomes a timber-framed house or a stone tower, with villagers, knights, a horse and cart, chickens and a dog in the street, a windmill on the hill and a sky that turns to dusk and night",
+      "groups": [
+        "Village"
+      ],
+      "params": {
+        "villagers": {
+          "label": "Villagers",
+          "hint": "How many people, animals and carts roam the street"
+        },
+        "time": {
+          "label": "Time of day",
+          "hint": "Day, dusk or night (the windows light up)",
+          "options": [
+            "Day",
+            "Dusk",
+            "Night"
+          ]
+        }
+      }
     }
   }
 }
