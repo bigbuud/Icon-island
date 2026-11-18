@@ -427,7 +427,7 @@
       "page": "lotus.html",
       "status": "ready",
       "product": "free",
-      "thumb": "url(thumbs/lotus-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#0f3a30,#2c8a62)",
+      "thumb": "url(thumbs/lotus-open.webp?v=2) center / cover no-repeat, linear-gradient(160deg,#0f3a30,#2c8a62)",
       "thumbSource": "custom",
       "groups": [
         {
