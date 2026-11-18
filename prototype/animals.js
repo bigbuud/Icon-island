@@ -20,6 +20,10 @@ const Fauna = (() => {
     adult:  { size: 29, speed: 15, turn: 2.5 },
     dog:    { size: 15, speed: 55, turn: 5.0 },
     camel:  { size: 50, speed: 12, turn: 1.2 },
+    skater: { size: 22, speed: 40, turn: 1.6 },
+    penguin:{ size: 17, speed: 14, turn: 2.2 },
+    reindeer:{ size: 33, speed: 17, turn: 2.2 },
+    arcticfox:{ size: 22, speed: 20, turn: 3.0 },
   };
   const rnd = Math.random;
   const pickOf = a => a[Math.floor(rnd() * a.length)];
@@ -44,6 +48,10 @@ const Fauna = (() => {
       case 'kid': case 'adult': return {
         shirt: pickOf(['#e5484d', '#2f80ed', '#f2c94c', '#27ae60', '#9b51e0', '#f2994a', '#eb6fa5', '#56ccf2']), pants: pickOf(['#34495e', '#2d3f6b', '#5a4a3a', '#6b7280', '#3b6b4a']),
         skin: pickOf(['#f2c9a5', '#e0a97c', '#c68a5b', '#8d5a3b', '#f6d7bd']), hair: pickOf(['#2b1d14', '#5a3a1e', '#a8742c', '#d9b25a', '#141414', '#8a3b1a']), long: rnd() < 0.5 };
+      case 'skater': { const p = palette('adult'); p.hat = pickOf(['#e5484d', '#2f80ed', '#f2c94c', '#27ae60', '#9b51e0']); return p; }
+      case 'penguin': return { body: '#1d2733' };
+      case 'reindeer': return { body: pickOf(['#8a7260', '#7a6552', '#9a8470']), male: true };
+      case 'arcticfox': return { body: '#f2f5f8' };
       case 'dog': return { body: pickOf(['#b9824a', '#2b2622', '#e9e2d2', '#8a5a34', '#d6b06a']), patch: pickOf(['#f1ece0', '#3a302a', '#6b4a2c']) };
       case 'camel': return { body: pickOf(['#c99a5b', '#bf8f52', '#d4a96a']), cloth: pickOf(['#b5382a', '#2f6fb0', '#d9a21e', '#3a8a5a']) };
       default: return { body: pickOf(['#9b8672', '#a89884', '#8a7a68']) };
@@ -142,7 +150,7 @@ const Fauna = (() => {
       c.fillStyle = 'rgba(255,255,255,0.2)'; el(c, 0.02 * L, -0.1 * L, 0.1 * L, 0.07 * L);
       const hx = play ? 0.14 * L : 0.03 * L;
       c.fillStyle = P.skin; el(c, hx + 0.02 * L, 0, 0.15 * L, 0.16 * L);
-      c.fillStyle = P.hair; el(c, hx - 0.04 * L, 0, 0.14 * L, 0.17 * L); if (P.long && a.kind === 'adult') el(c, hx - 0.14 * L, 0, 0.14 * L, 0.12 * L);
+      c.fillStyle = P.hat || P.hair; el(c, hx - 0.04 * L, 0, 0.14 * L, 0.17 * L); if (P.hat) { c.fillStyle = '#fff'; el(c, hx - 0.17 * L, 0, 0.05 * L, 0.05 * L); } if (P.long && a.kind === 'adult') el(c, hx - 0.14 * L, 0, 0.14 * L, 0.12 * L);
     },
     dog(c, a, L, t) {
       const P = a.pal, v = Math.min(1, a.v / SPEC.dog.speed), sit = a.state === 'graze';
@@ -167,6 +175,19 @@ const Fauna = (() => {
       c.strokeStyle = P.body; c.lineWidth = 0.1 * L; c.beginPath(); c.moveTo(0.34 * L, 0); c.quadraticCurveTo(0.5 * L + ext, -0.03 * L, 0.6 * L + ext, 0); c.stroke();
       c.fillStyle = P.body; el(c, 0.67 * L + ext, 0, 0.1 * L, 0.06 * L); c.fillStyle = '#2a1c14'; el(c, 0.74 * L + ext, 0, 0.02 * L, 0.02 * L);
       c.fillStyle = P.body; el(c, 0.6 * L + ext, -0.07 * L, 0.03 * L, 0.018 * L, -0.5); el(c, 0.6 * L + ext, 0.07 * L, 0.03 * L, 0.018 * L, 0.5);
+    },
+    skater(c, a, L, t) { DRAW.person(c, a, L * 1.5, t); },
+    reindeer(c, a, L, t) { DRAW.deer(c, Object.assign({}, a, { v: a.v / SPEC.reindeer.speed * SPEC.deer.speed }), L, t); },
+    arcticfox(c, a, L, t) { DRAW.fox(c, Object.assign({}, a, { v: a.v / SPEC.arcticfox.speed * SPEC.fox.speed }), L, t); },
+    penguin(c, a, L, t) {
+      const slide = a.state === 'graze', v = Math.min(1, a.v / SPEC.penguin.speed), sw = Math.sin(a.ph * 2) * v;
+      c.fillStyle = 'rgba(30,50,80,0.25)'; el(c, 0.05 * L, 0.06 * L, 0.38 * L, 0.26 * L);
+      if (!slide) { c.fillStyle = '#f08a24'; el(c, -0.05 * L + sw * 0.1 * L, -0.12 * L, 0.1 * L, 0.06 * L); el(c, -0.05 * L - sw * 0.1 * L, 0.12 * L, 0.1 * L, 0.06 * L); }
+      c.fillStyle = a.pal.body; c.save(); c.rotate(sw * 0.12); el(c, 0, 0, 0.42 * L, 0.25 * L); c.restore();
+      c.fillStyle = '#f4f6f8'; el(c, 0.04 * L, 0, 0.3 * L, 0.17 * L);
+      const fl = slide ? 0.36 : 0.26 + Math.abs(sw) * 0.06; c.fillStyle = a.pal.body; el(c, 0.04 * L, -fl * L, 0.14 * L, 0.05 * L, -0.5); el(c, 0.04 * L, fl * L, 0.14 * L, 0.05 * L, 0.5);
+      c.fillStyle = a.pal.body; el(c, 0.38 * L, 0, 0.12 * L, 0.11 * L); c.fillStyle = '#f2b02a'; el(c, 0.5 * L, 0, 0.06 * L, 0.03 * L);
+      c.fillStyle = '#fff'; el(c, 0.4 * L, -0.05 * L, 0.02 * L, 0.02 * L); el(c, 0.4 * L, 0.05 * L, 0.02 * L, 0.02 * L);
     },
     rabbit(c, a, L, t) {
       const P = a.pal;

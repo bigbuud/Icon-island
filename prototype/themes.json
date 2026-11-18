@@ -546,6 +546,92 @@
           ]
         }
       ]
+    },
+    {
+      "id": "winter",
+      "adaptive": true,
+      "name": "Winter",
+      "desc": "A snowy landscape from above. Every group of icons sits on its own frozen pond with skaters, while reindeer, arctic foxes and penguins roam between fir trees, cabins and snowmen. Choose day or night",
+      "page": "winter.html",
+      "status": "ready",
+      "product": "free",
+      "thumb": "url(thumbs/winter-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#dcecf8,#9fc4e4)",
+      "thumbSource": "custom",
+      "groups": [
+        {
+          "name": "Winter",
+          "params": [
+            {
+              "key": "snow",
+              "label": "Snowfall",
+              "hint": "How hard it snows",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "critters",
+              "label": "Skaters & animals",
+              "hint": "How many skaters, reindeer, foxes and penguins",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "time",
+              "label": "Time of day",
+              "hint": "Daylight or a snowy night with glowing cabins",
+              "options": [
+                "Day",
+                "Night"
+              ],
+              "default": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reef",
+      "adaptive": true,
+      "name": "Reef",
+      "desc": "The sea floor seen from above. Every group of icons sits on a sandy lagoon ringed by coral, with shoals of fish, turtles, jellyfish, a manta ray and now and then a shark",
+      "page": "reef.html",
+      "status": "ready",
+      "product": "free",
+      "thumb": "url(thumbs/reef-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#1c8aa8,#0e5a7e)",
+      "thumbSource": "custom",
+      "groups": [
+        {
+          "name": "Reef",
+          "params": [
+            {
+              "key": "fish",
+              "label": "Sea life",
+              "hint": "How many fish, turtles and jellyfish swim around",
+              "min": 0,
+              "max": 2,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            },
+            {
+              "key": "light",
+              "label": "Sunlight",
+              "hint": "Strength of the light patterns dancing on the sea floor",
+              "min": 0,
+              "max": 1.5,
+              "step": 0.05,
+              "default": 1,
+              "format": "percent"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

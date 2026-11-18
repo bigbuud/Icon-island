@@ -393,6 +393,48 @@
           ]
         }
       }
+    },
+    "winter": {
+      "name": "Winter",
+      "desc": "A snowy landscape from above. Every group of icons sits on its own frozen pond with skaters, while reindeer, arctic foxes and penguins roam between fir trees, cabins and snowmen. Choose day or night",
+      "groups": [
+        "Winter"
+      ],
+      "params": {
+        "snow": {
+          "label": "Snowfall",
+          "hint": "How hard it snows"
+        },
+        "critters": {
+          "label": "Skaters & animals",
+          "hint": "How many skaters, reindeer, foxes and penguins"
+        },
+        "time": {
+          "label": "Time of day",
+          "hint": "Daylight or a snowy night with glowing cabins",
+          "options": [
+            "Day",
+            "Night"
+          ]
+        }
+      }
+    },
+    "reef": {
+      "name": "Reef",
+      "desc": "The sea floor seen from above. Every group of icons sits on a sandy lagoon ringed by coral, with shoals of fish, turtles, jellyfish, a manta ray and now and then a shark",
+      "groups": [
+        "Reef"
+      ],
+      "params": {
+        "fish": {
+          "label": "Sea life",
+          "hint": "How many fish, turtles and jellyfish swim around"
+        },
+        "light": {
+          "label": "Sunlight",
+          "hint": "Strength of the light patterns dancing on the sea floor"
+        }
+      }
     }
   }
 }

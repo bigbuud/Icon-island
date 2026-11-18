@@ -14,7 +14,7 @@ Icon Island is a free fork of [Deskland Preview](https://github.com/BLEZZ0102/De
 ## What changed in this fork
 
 - **All monitors:** one wallpaper window per display, each adapting to the icons that sit on that display. Plug or unplug a monitor and the layout rebuilds itself. Tray → *Use all monitors* switches back to primary-only.
-- **Nine free themes:** Beach and Meadow (original) plus seven new ones — **Aurora**, **Sky** (day / dusk / night, with planes and birds), **Pasture**, **Forest** (summer / autumn / spring), **Lotus pond**, **Playground** (sandboxes, kids, parents and a dog) and **Desert** (dunes, pyramids, oases and camels). The new themes are original work built on the shared `prototype/kit.js` framework.
+- **Eleven free themes:** Beach and Meadow (original) plus nine new ones — **Aurora**, **Sky** (day / dusk / night, with planes and birds), **Pasture**, **Forest** (summer / autumn / spring), **Lotus pond**, **Playground** (sandboxes, kids, parents and a dog) and **Desert** (dunes, pyramids, oases and camels), **Winter** (frozen ponds, skaters, reindeer and penguins) and **Reef** (coral lagoons, fish, turtles and a shark). The new themes are original work built on the shared `prototype/kit.js` framework.
 - **No locked content:** the 11 placeholder "locked" cards, the purchase dialog and the website link were removed.
 
 ## Themes
