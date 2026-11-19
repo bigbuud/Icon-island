@@ -641,7 +641,7 @@
       "page": "medieval.html",
       "status": "ready",
       "product": "free",
-      "thumb": "url(thumbs/medieval-open.webp?v=2) center / cover no-repeat, linear-gradient(160deg,#5c9a3c,#a8b84a)",
+      "thumb": "url(thumbs/medieval-open.webp?v=3) center / cover no-repeat, linear-gradient(160deg,#5c9a3c,#a8b84a)",
       "thumbSource": "custom",
       "groups": [
         {
