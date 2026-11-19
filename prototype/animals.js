@@ -1,4 +1,4 @@
-// Shared creatures for the Pasture, Forest, Playground and Desert themes (animals, people, camels): top-down vector drawings plus a simple wander AI.
+// Shared creatures for the Pasture, Forest and Winter themes (animals, people): top-down vector drawings plus a simple wander AI.
 //
 //   const herd = new Fauna.Herd();
 //   herd.add('cow', x, y);                       // kinds: cow, horse, deer, boar, fox, rabbit

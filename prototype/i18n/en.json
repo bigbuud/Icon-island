@@ -352,48 +352,6 @@
         }
       }
     },
-    "playground": {
-      "name": "Playground",
-      "desc": "A park seen from above. Your icons sit in wooden sandboxes with toys, surrounded by swings, a slide and a merry-go-round. Kids play, parents stroll and now and then a dog runs by",
-      "groups": [
-        "Park"
-      ],
-      "params": {
-        "kids": {
-          "label": "Kids & parents",
-          "hint": "How many children and parents are in the park"
-        },
-        "equipment": {
-          "label": "Playground equipment",
-          "hint": "Swings, slide, merry-go-round and more",
-          "options": [
-            "Off",
-            "On"
-          ]
-        }
-      }
-    },
-    "desert": {
-      "name": "Desert",
-      "desc": "Sand dunes and pyramids seen from above. Every group of icons gets its own oasis with palms and a pool, camels rest around them and now and then a caravan passes",
-      "groups": [
-        "Desert"
-      ],
-      "params": {
-        "camels": {
-          "label": "Camels",
-          "hint": "How many camels roam around the oases"
-        },
-        "time": {
-          "label": "Time of day",
-          "hint": "Midday sun or a warm sunset",
-          "options": [
-            "Day",
-            "Sunset"
-          ]
-        }
-      }
-    },
     "winter": {
       "name": "Winter",
       "desc": "A snowy landscape from above. Every group of icons sits on its own frozen pond with skaters, while reindeer, arctic foxes and penguins roam between fir trees, cabins and snowmen. Choose day or night",
@@ -419,45 +377,24 @@
         }
       }
     },
-    "reef": {
-      "name": "Reef",
-      "desc": "The sea floor seen from above. Every group of icons sits on a sandy lagoon ringed by coral, with shoals of fish, turtles, jellyfish, a manta ray and now and then a shark",
+    "zen": {
+      "name": "Zen Garden",
+      "desc": "A calm Japanese sand garden from above. The sand is raked in long waves and rings around your icons, which rest on mossy islands with a rim of stones. Cherry, maple and ginkgo trees and stone lanterns stand between them, petals drift by and leaf shadows slide over the sand",
       "groups": [
-        "Reef"
+        "Garden"
       ],
       "params": {
-        "fish": {
-          "label": "Sea life",
-          "hint": "How many fish, turtles and jellyfish swim around"
+        "petals": {
+          "label": "Petals",
+          "hint": "How many petals and leaves drift across the garden"
         },
-        "light": {
-          "label": "Sunlight",
-          "hint": "Strength of the light patterns dancing on the sea floor"
-        }
-      }
-    },
-    "medieval": {
-      "name": "Medieval village",
-      "desc": "A medieval countryside from above. Several villages with thatched and slate houses, a market square, a church, a windmill, a river with bridges and crop fields. Every group of icons sits in its own fenced field, while villagers walk the roads, carts drive between the villages and cows, horses and pigs graze",
-      "groups": [
-        "Countryside"
-      ],
-      "params": {
-        "life": {
-          "label": "Life",
-          "hint": "How many villagers, carts and animals are about"
-        },
-        "villages": {
-          "label": "Villages",
-          "hint": "How many villages fill the landscape"
-        },
-        "season": {
-          "label": "Season",
-          "hint": "Summer greens, autumn colours or spring blossom",
+        "time": {
+          "label": "Time of day",
+          "hint": "Morning light, golden hour or a moonlit night with glowing lanterns",
           "options": [
-            "Summer",
-            "Autumn",
-            "Spring"
+            "Morning",
+            "Golden hour",
+            "Night"
           ]
         }
       }
