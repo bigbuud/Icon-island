@@ -438,22 +438,26 @@
     },
     "medieval": {
       "name": "Medieval village",
-      "desc": "A side-view village. Every group of icons becomes a timber-framed house or a stone tower, with villagers, knights, a horse and cart, chickens and a dog in the street, a windmill on the hill and a sky that turns to dusk and night",
+      "desc": "A medieval countryside from above. Several villages with thatched and slate houses, a market square, a church, a windmill, a river with bridges and crop fields. Every group of icons sits in its own fenced field, while villagers walk the roads, carts drive between the villages and cows, horses and pigs graze",
       "groups": [
-        "Village"
+        "Countryside"
       ],
       "params": {
-        "villagers": {
-          "label": "Villagers",
-          "hint": "How many people, animals and carts roam the street"
+        "life": {
+          "label": "Life",
+          "hint": "How many villagers, carts and animals are about"
         },
-        "time": {
-          "label": "Time of day",
-          "hint": "Day, dusk or night (the windows light up)",
+        "villages": {
+          "label": "Villages",
+          "hint": "How many villages fill the landscape"
+        },
+        "season": {
+          "label": "Season",
+          "hint": "Summer greens, autumn colours or spring blossom",
           "options": [
-            "Day",
-            "Dusk",
-            "Night"
+            "Summer",
+            "Autumn",
+            "Spring"
           ]
         }
       }
