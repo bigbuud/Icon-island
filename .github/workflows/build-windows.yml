@@ -17,6 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Number this build (0.2.<run>) so the program can see newer builds
+        shell: powershell
+        run: |
+          $v = Get-Content tools\version.json -Raw | ConvertFrom-Json
+          $parts = $v.version.Split('.')
+          $new = '{0}.{1}.{2}' -f $parts[0], $parts[1], $env:GITHUB_RUN_NUMBER
+          [IO.File]::WriteAllText('tools\version.json', '{"version":"' + $new + '"}')
+          Write-Host "Version $new"
+
       - name: Install NSIS (installer maker)
         shell: powershell
         run: choco install nsis -y --no-progress

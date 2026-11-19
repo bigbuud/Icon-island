@@ -9,7 +9,10 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -370,6 +373,7 @@ class HostContext : ApplicationContext
         watch.Tick += delegate { Watch(); };
         watch.Start();
         StartForm();
+        StartUpdateTimer();
         if (showSettings) OpenSettings();
     }
 
@@ -427,6 +431,102 @@ class HostContext : ApplicationContext
         PostUpdateState();
     }
 
+
+    // ---- updates from GitHub: every build gets a higher version number; "Update now" downloads and runs the new installer
+    const string ReleaseApi = "https://api.github.com/repos/bigbuud/Icon-island/releases/tags/latest";
+    const string ReleasePrefix = "https://github.com/bigbuud/Icon-island/releases/";
+    volatile bool updateDirty, updateBusy;
+    DateTime lastUpdateCheck = DateTime.UtcNow.AddHours(-6).AddSeconds(20);
+    string updateShaUrl;
+    System.Windows.Forms.Timer updateTimer;
+
+    void StartUpdateTimer()
+    {
+        updateTimer = new System.Windows.Forms.Timer();
+        updateTimer.Interval = 500;
+        updateTimer.Tick += delegate
+        {
+            if (updateDirty) { updateDirty = false; PostUpdateState(); }
+            if (!updateBusy && (DateTime.UtcNow - lastUpdateCheck).TotalHours >= 6) CheckForUpdate();
+        };
+        updateTimer.Start();
+    }
+
+    void CheckForUpdate()
+    {
+        if (updateBusy) return;
+        updateBusy = true;
+        lastUpdateCheck = DateTime.UtcNow;
+        ThreadPool.QueueUserWorkItem(delegate
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                string json;
+                using (var wc = new WebClient()) { wc.Headers["User-Agent"] = "IconIsland"; wc.Headers["Accept"] = "application/vnd.github+json"; json = wc.DownloadString(ReleaseApi); }
+                var rel = Json.Parse(json) as Dictionary<string, object>;
+                var assets = rel != null && rel.ContainsKey("assets") ? rel["assets"] as System.Collections.IEnumerable : null;
+                if (assets == null) return;
+                Version cur = Assembly.GetExecutingAssembly().GetName().Version, best = null;
+                string url = null, shaUrl = null;
+                var list = new List<Dictionary<string, object>>();
+                foreach (object o in assets) { var a = o as Dictionary<string, object>; if (a != null) list.Add(a); }
+                foreach (var a in list)
+                {
+                    var m = Regex.Match(Convert.ToString(a["name"]), @"^IconIsland-(\d+\.\d+\.\d+)(?:-[A-Za-z0-9.]+)*-Setup\.exe$");
+                    if (!m.Success) continue;
+                    var v = new Version(m.Groups[1].Value);
+                    if (best == null || v > best) { best = v; url = Convert.ToString(a["browser_download_url"]); shaUrl = null; foreach (var b in list) if (Convert.ToString(b["name"]) == Convert.ToString(a["name"]) + ".sha256") shaUrl = Convert.ToString(b["browser_download_url"]); }
+                }
+                if (best != null && url != null && url.StartsWith(ReleasePrefix) && best > new Version(cur.Major, cur.Minor, cur.Build) && updateStatus != "downloading" && updateStatus != "installing")
+                {
+                    updateVersion = best.ToString(); updateUrl = url; updateShaUrl = shaUrl; updateStatus = "available"; updateProgress = -1; updateError = "";
+                    Log.Write("Update available: " + updateVersion);
+                }
+            }
+            catch (Exception ex) { Log.Write("Update check failed: " + ex.Message); }
+            finally { updateBusy = false; updateDirty = true; }
+        });
+    }
+
+    void InstallUpdate()
+    {
+        string url = updateUrl;
+        if (url == null || updateBusy || !url.StartsWith(ReleasePrefix)) return;
+        updateBusy = true; updateStatus = "downloading"; updateProgress = 0; updateError = ""; updateDirty = true;
+        string shaUrl = updateShaUrl, ver = updateVersion;
+        ThreadPool.QueueUserWorkItem(delegate
+        {
+            bool launched = false;
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                string path = Path.Combine(Path.GetTempPath(), "IconIsland-update-" + ver + "-Setup.exe");
+                var req = (HttpWebRequest)WebRequest.Create(url); req.UserAgent = "IconIsland";
+                using (var resp = req.GetResponse())
+                using (var inS = resp.GetResponseStream())
+                using (var outS = File.Create(path))
+                {
+                    long total = resp.ContentLength, got = 0; var buf = new byte[65536]; int n;
+                    while ((n = inS.Read(buf, 0, buf.Length)) > 0) { outS.Write(buf, 0, n); got += n; if (total > 0) { updateProgress = (double)got / total; updateDirty = true; } }
+                }
+                if (shaUrl != null && shaUrl.StartsWith(ReleasePrefix))
+                {
+                    string txt; using (var wc = new WebClient()) { wc.Headers["User-Agent"] = "IconIsland"; txt = wc.DownloadString(shaUrl); }
+                    var m = Regex.Match(txt, "[0-9a-fA-F]{64}");
+                    string hash; using (var sha = SHA256.Create()) using (var fs = File.OpenRead(path)) hash = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "");
+                    if (!m.Success || !string.Equals(m.Value, hash, StringComparison.OrdinalIgnoreCase)) throw new Exception("checksum mismatch");
+                }
+                updateStatus = "installing"; updateProgress = -1; updateDirty = true;
+                Log.Write("Starting update installer " + path);
+                Process.Start(new ProcessStartInfo(path, "/S") { UseShellExecute = true });
+                launched = true;
+            }
+            catch (Exception ex) { Log.Write("Update failed: " + ex.Message); updateStatus = "error"; updateError = "download_failed"; updateDirty = true; }
+            finally { if (!launched) updateBusy = false; }
+        });
+    }
+
     void SaveSoon() { saveDue = DateTime.Now.AddMilliseconds(600); }
 
     bool ThemeAllowed(string id)
@@ -449,6 +549,7 @@ class HostContext : ApplicationContext
                     "autostartWarn", autoStartSw != null, "autostartSw", autoStartSw ?? "",
                     "lang", Settings.Lang, "langEff", I18n.Code, "langSys", I18n.Sys)));
                 if (updateVersion != null) PostUpdateState();
+                if (!updateBusy && (DateTime.UtcNow - lastUpdateCheck).TotalMinutes >= 2) CheckForUpdate();
                 if (form != null && form.LastIcons != "") settingsWin.Post(form.LastIcons);
                 break;
             case "set":
@@ -523,7 +624,7 @@ class HostContext : ApplicationContext
                 if (lastShare != null && File.Exists(lastShare)) Process.Start("explorer.exe", "/select,\"" + lastShare + "\"");
                 break;
             case "updateProgram":
-                if (updateUrl != null) Process.Start(updateUrl);
+                InstallUpdate();
                 break;
             case "autostart":
                 SetAutoStart(m["v"] is bool && (bool)m["v"]);

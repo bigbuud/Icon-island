@@ -113,6 +113,10 @@ Section "$(AppFiles)" SecApp
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\IconIsland" "NoRepair" 1
   ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\IconIsland" "EstimatedSize" $0
+  ; silent run = in-app update: start the program again afterwards
+  ${If} ${Silent}
+    Exec '"$INSTDIR\host\bin\IconIsland.exe" --autostart'
+  ${EndIf}
 SectionEnd
 
 Function un.onInit
