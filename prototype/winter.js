@@ -1,11 +1,11 @@
 // Theme "Winter": a snowy landscape from above. Every group of icons sits on its own frozen pond with skaters;
-// reindeer, arctic foxes and penguins roam the snow, cabins puff smoke, a mix of firs, spruces, pines, bare oaks, birches and snowy bushes stands around and snow keeps falling.
+// reindeer, arctic foxes, rabbits, a dog and squirrels roam the snow, cabins puff smoke, a mix of firs, spruces, pines, bare oaks, birches and snowy bushes stands around and snow keeps falling.
 IconIsland.theme({
   params: { snow: 1, critters: 1, time: 0 },
   R: 64,
   _Z: null, _bg: null, _ice: null, _comp: null, _tmp: null, _items: [], _trees: [], _flakes: [], _herdIn: null, _herdOut: null, _bal: 0, _sig: '', _last: -9, _seed: 1, _smoke: [],
 
-  init(env, seed) { this._seed = seed; this._Z = new Zones(this.R, 20); this._herdIn = new Fauna.Herd(); this._herdOut = new Fauna.Herd(); this._sig = ''; },
+  init(env, seed) { this._seed = seed; this._Z = new Zones(this.R, 20); this._herdIn = new Fauna.Herd(); this._herdOut = new Fauna.Herd(); this._herdIn.kindScale = { skater: 0.7 }; this._herdOut.kindScale = { reindeer: 0.75, arcticfox: 0.75, rabbit: 1.0, dog: 1.1, squirrel: 1.1 }; this._sig = ''; },
 
   rebuild(env) {
     const { W, H, S, P } = env, mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
@@ -145,7 +145,9 @@ IconIsland.theme({
     keep(this._herdIn, 'skater', n && c > 0 ? Math.round(c * Math.min(12, 2 + n * 0.5)) : 0, () => this._pickIn(env));
     const k = n ? 1 : 2;
     keep(this._herdOut, 'reindeer', c > 0 ? Math.round(c * Math.min(5, 1 + n * 0.12) * k) : 0, () => this._pickOut(env));
-    keep(this._herdOut, 'penguin', c > 0 ? Math.round(c * Math.min(8, 2 + n * 0.25) * k) : 0, () => this._pickOut(env));
+    keep(this._herdOut, 'rabbit', c > 0 ? Math.round(c * Math.min(7, 2 + n * 0.25) * k) : 0, () => this._pickOut(env));
+    keep(this._herdOut, 'dog', c > 0 ? Math.round(c * Math.min(2, 1 + n * 0.05) * k) : 0, () => this._pickOut(env));
+    keep(this._herdOut, 'squirrel', c > 0 && this._trees.length ? Math.round(c * Math.min(5, 2 + n * 0.15) * k) : 0, () => { const t = this._trees[Math.floor(Math.random() * this._trees.length)], x = t[0] + (Math.random() - 0.5) * 60, y = t[1] + (Math.random() - 0.5) * 60; return this._openOut(env, x, y) > 0.9 ? { x, y } : this._pickOut(env); });
     keep(this._herdOut, 'arcticfox', c > 0 ? Math.round(c * Math.min(3, 1 + n * 0.08) * k) : 0, () => this._pickOut(env));
   },
 

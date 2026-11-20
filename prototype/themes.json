@@ -475,7 +475,7 @@
       "id": "winter",
       "adaptive": true,
       "name": "Winter",
-      "desc": "A snowy landscape from above. Every group of icons sits on its own frozen pond with skaters, while reindeer, arctic foxes and penguins roam between fir trees, cabins and snowmen. Choose day or night",
+      "desc": "A snowy landscape from above. Every group of icons sits on its own frozen pond with skaters, while reindeer, arctic foxes, rabbits, a dog and squirrels roam between fir trees, cabins and snowmen. Choose day or night",
       "page": "winter.html",
       "status": "ready",
       "product": "free",
@@ -498,7 +498,7 @@
             {
               "key": "critters",
               "label": "Skaters & animals",
-              "hint": "How many skaters, reindeer, foxes and penguins",
+              "hint": "How many skaters, reindeer, foxes, rabbits, dogs and squirrels",
               "min": 0,
               "max": 2,
               "step": 0.05,

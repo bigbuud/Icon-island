@@ -1,7 +1,7 @@
 // Shared creatures for the Pasture, Forest and Winter themes (animals, people): top-down vector drawings plus a simple wander AI.
 //
 //   const herd = new Fauna.Herd();
-//   herd.add('cow', x, y);                       // kinds: cow, horse, deer, boar, fox, rabbit
+//   herd.add('cow', x, y);                       // kinds: cow, horse, deer, boar, fox, rabbit, squirrel
 //   herd.step(dt, t, open, pick);                // open(x, y) -> 0..1 how allowed a spot is; pick() -> {x, y} | null
 //   herd.draw(ctx, t);
 //
@@ -16,6 +16,7 @@ const Fauna = (() => {
     boar:   { size: 25, speed: 12, turn: 2.0 },
     fox:    { size: 22, speed: 20, turn: 3.0 },
     rabbit: { size: 10, speed: 24, turn: 5.0 },
+    squirrel: { size: 8, speed: 30, turn: 6.0 },
     kid:    { size: 20, speed: 26, turn: 4.0 },
     adult:  { size: 29, speed: 15, turn: 2.5 },
     dog:    { size: 15, speed: 55, turn: 5.0 },
@@ -50,6 +51,8 @@ const Fauna = (() => {
         skin: pickOf(['#f2c9a5', '#e0a97c', '#c68a5b', '#8d5a3b', '#f6d7bd']), hair: pickOf(['#2b1d14', '#5a3a1e', '#a8742c', '#d9b25a', '#141414', '#8a3b1a']), long: rnd() < 0.5 };
       case 'skater': { const p = palette('adult'); p.hat = pickOf(['#e5484d', '#2f80ed', '#f2c94c', '#27ae60', '#9b51e0']); return p; }
       case 'penguin': return { body: '#1d2733' };
+      case 'squirrel': return { body: pickOf(['#b4562a', '#a8481f', '#8a8a86']), belly: '#f2e8d8' };
+      case 'rabbit': return { body: pickOf(['#9b8672', '#a89884', '#8a7a68', '#d8d2c8']) };
       case 'reindeer': return { body: pickOf(['#8a7260', '#7a6552', '#9a8470']), male: true };
       case 'arcticfox': return { body: '#f2f5f8' };
       case 'dog': return { body: pickOf(['#b9824a', '#2b2622', '#e9e2d2', '#8a5a34', '#d6b06a']), patch: pickOf(['#f1ece0', '#3a302a', '#6b4a2c']) };
@@ -190,18 +193,36 @@ const Fauna = (() => {
       c.fillStyle = '#fff'; el(c, 0.4 * L, -0.05 * L, 0.02 * L, 0.02 * L); el(c, 0.4 * L, 0.05 * L, 0.02 * L, 0.02 * L);
     },
     rabbit(c, a, L, t) {
-      const P = a.pal;
-      c.fillStyle = 'rgba(20,30,10,0.2)'; el(c, 0.04 * L, 0.06 * L, 0.38 * L, 0.2 * L);
-      c.fillStyle = P.body; el(c, 0, 0, 0.36 * L, 0.21 * L); el(c, 0.36 * L, 0, 0.18 * L, 0.14 * L);
-      el(c, 0.3 * L, -0.12 * L, 0.2 * L, 0.05 * L, -0.5); el(c, 0.3 * L, 0.12 * L, 0.2 * L, 0.05 * L, 0.5);
-      c.fillStyle = '#f6f0e4'; el(c, -0.36 * L, 0, 0.07 * L, 0.07 * L);
+      const P = a.pal, h = a.hop || 0;
+      c.fillStyle = 'rgba(20,30,10,' + (0.22 - h * 0.08) + ')'; el(c, 0.04 * L, 0.08 * L + h * 0.1 * L, 0.38 * L, 0.2 * L);
+      c.save(); c.scale(1 + h * 0.28, 1 - h * 0.1);
+      c.fillStyle = P.body; el(c, 0, 0, 0.36 * L, 0.21 * L); el(c, 0.38 * L, 0, 0.17 * L, 0.13 * L);
+      c.fillStyle = 'rgba(0,0,0,0.16)'; el(c, 0.5 * L, 0, 0.05 * L, 0.05 * L);
+      c.fillStyle = P.body; el(c, 0.3 * L, -0.11 * L, 0.2 * L, 0.045 * L, -0.55); el(c, 0.3 * L, 0.11 * L, 0.2 * L, 0.045 * L, 0.55);
+      c.fillStyle = 'rgba(255,255,255,0.25)'; el(c, 0.3 * L, -0.11 * L, 0.12 * L, 0.02 * L, -0.55); el(c, 0.3 * L, 0.11 * L, 0.12 * L, 0.02 * L, 0.55);
+      c.fillStyle = P.body; el(c, -0.18 * L, -0.15 * L, 0.14 * L, 0.07 * L, 0.3); el(c, -0.18 * L, 0.15 * L, 0.14 * L, 0.07 * L, -0.3);
+      c.fillStyle = '#f6f0e4'; el(c, -0.37 * L, 0, 0.08 * L, 0.08 * L);
+      c.fillStyle = '#1a1410'; el(c, 0.43 * L, -0.07 * L, 0.02 * L, 0.02 * L); el(c, 0.43 * L, 0.07 * L, 0.02 * L, 0.02 * L);
+      c.restore();
+    },
+    squirrel(c, a, L, t) {
+      const P = a.pal, h = a.hop || 0;
+      c.fillStyle = 'rgba(20,30,10,0.2)'; el(c, 0.02 * L, 0.08 * L + h * 0.08 * L, 0.38 * L, 0.18 * L);
+      c.save(); c.scale(1 + h * 0.22, 1 - h * 0.08);
+      c.fillStyle = P.body; c.beginPath(); c.moveTo(-0.28 * L, 0); c.bezierCurveTo(-0.7 * L, -0.1 * L, -0.85 * L, 0.4 * L, -0.45 * L, 0.45 * L); c.bezierCurveTo(-0.5 * L, 0.2 * L, -0.4 * L, 0.1 * L, -0.28 * L, 0.1 * L); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.2)'; el(c, -0.6 * L, 0.22 * L, 0.16 * L, 0.05 * L, 0.7);
+      c.fillStyle = P.body; el(c, 0, 0, 0.32 * L, 0.18 * L); el(c, 0.34 * L, 0, 0.15 * L, 0.12 * L);
+      c.fillStyle = P.belly; el(c, 0.05 * L, 0, 0.2 * L, 0.09 * L);
+      c.fillStyle = P.body; el(c, 0.3 * L, -0.12 * L, 0.05 * L, 0.05 * L); el(c, 0.3 * L, 0.12 * L, 0.05 * L, 0.05 * L);
+      c.fillStyle = '#1a1410'; el(c, 0.42 * L, -0.06 * L, 0.02 * L, 0.02 * L); el(c, 0.42 * L, 0.06 * L, 0.02 * L, 0.02 * L);
+      c.restore();
     },
   };
 
   class Herd {
-    constructor() { this.list = []; }
+    constructor() { this.list = []; this.kindScale = {}; }
     add(kind, x, y, fade) {
-      const sp = SPEC[kind], a = { kind, x, y, ang: rnd() * TAU, want: rnd() * TAU, v: 0, ph: rnd() * 6, state: rnd() < 0.5 ? 'graze' : 'walk', timer: 1 + rnd() * 5, a: fade ? 0 : 1, leaving: false, lost: 0, seed: rnd() * 6.28, pal: palette(kind), size: sp.size * 1.55 * (0.92 + rnd() * 0.18) };
+      const sp = SPEC[kind], a = { kind, x, y, ang: rnd() * TAU, want: rnd() * TAU, v: 0, ph: rnd() * 6, state: rnd() < 0.5 ? 'graze' : 'walk', timer: 1 + rnd() * 5, a: fade ? 0 : 1, leaving: false, lost: 0, seed: rnd() * 6.28, pal: palette(kind), size: sp.size * 1.55 * (0.92 + rnd() * 0.18) * (this.kindScale[kind] || 1), hop: 0, hp: rnd() * 6 };
       this.list.push(a); return a;
     }
     step(dt, t, open, pick) {
@@ -228,7 +249,9 @@ const Fauna = (() => {
         const d = angDiff(c.want, c.ang); c.ang += clamp(d, -sp.turn * dt, sp.turn * dt);
         const target = c.state === 'walk' ? sp.speed * (0.8 + 0.4 * Math.sin(c.seed * 7)) : 0;
         c.v += (target - c.v) * (1 - Math.exp(-dt * 3));
-        const nx = c.x + Math.cos(c.ang) * c.v * dt, ny = c.y + Math.sin(c.ang) * c.v * dt;
+        let vv = c.v;
+        if (c.kind === 'rabbit' || c.kind === 'squirrel') { c.hp += dt * (c.v > 2 ? 9 : 0); c.hop = c.v > 2 ? Math.max(0, Math.sin(c.hp)) : 0; vv = c.v * c.hop * 2.2; }
+        const nx = c.x + Math.cos(c.ang) * vv * dt, ny = c.y + Math.sin(c.ang) * vv * dt;
         if (open(nx, ny) > 0.15 || open(nx, ny) >= here) { c.x = nx; c.y = ny; } else c.v = 0;
         c.ph += c.v * dt * 0.34;
         if (here < 0.05) { c.lost += dt; if (c.lost > 3) { const p = pick && pick(); if (p) { c.x = p.x; c.y = p.y; c.a = 0; } c.lost = 0; } } else c.lost = 0;
