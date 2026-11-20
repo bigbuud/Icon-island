@@ -3,8 +3,8 @@
 // Techniek: statische hemel in een cache-canvas; per frame worden alle wolkenbolletjes (iconen + drijvers)
 // verzameld en in drie lagen getekend (schaduw, lichte rand, lichaam), elk met één gevuld pad -> goedkoop en samensmeltend.
 IconIsland.theme({
-  params: { time: 0, cover: 0.35, flow: 1, life: 1 },
-  _plane: null, _planeT: 14, _flocks: [], _birdT: 3,
+  params: { time: 0, cover: 0.35, flow: 1, birds: 2, liners: 1, jets: 3, balloons: 3 },
+  _liners: [], _linerT: 5, _flocks: [], _birdT: 3, _jets: [], _jetT: 8, _balloons: [],
 
   _bg: null, _stars: [], _amb: [], _seed: 1,
   PAL: [
@@ -107,24 +107,46 @@ IconIsland.theme({
       layer(pal.rim, 0, -3, 0);
       layer(pal.cloud, 0, 0, 0);
     }
-    if (P.life >= 1) this._life(ctx, t, dt, env, tm);
-    else { this._plane = null; this._flocks.length = 0; }
+    this._life(ctx, t, dt, env, tm);
   },
 
-  // an airliner with a contrail now and then, and flocks of birds gliding through (no birds at night)
+  // balloons drifting, airliners with contrails, jet squadrons and flocks of birds gliding through (no birds at night)
   _life(ctx, t, dt, env, tm) {
-    const { W, H } = env, R = Math.random;
-    this._planeT -= dt; this._birdT -= dt;
-    if (!this._plane && this._planeT <= 0) {
-      const dir = R() < 0.5 ? 1 : -1, y0 = H * (0.1 + R() * 0.55);
-      this._plane = { x: dir > 0 ? -380 : W + 380, y: y0, dir, vy: (R() - 0.5) * 14, v: 80 + R() * 30, trail: [] };
+    const { W, H, P } = env, R = Math.random;
+    const nBird = Math.round(P.birds || 0), nLin = Math.round(P.liners || 0), nJet = Math.round(P.jets || 0), nBal = Math.round(P.balloons || 0);
+    this._linerT -= dt; this._birdT -= dt; this._jetT -= dt;
+    // ---- hot-air balloons: a fixed pool that wraps around the screen
+    while (this._balloons.length > nBal) this._balloons.pop();
+    const PALS = [['#e8453c', '#ffd23f'], ['#2f7fd8', '#ffffff'], ['#2fae6a', '#ffe08a'], ['#f08a2c', '#7b3fa0'], ['#d6407a', '#fff1c8'], ['#2aa7a7', '#f2f2f2'], ['#7a4fc4', '#ffc23a']];
+    while (this._balloons.length < nBal) {
+      const sc = 0.75 + R() * 0.55;
+      this._balloons.push({ x: R() * (W + 200) - 100, y: H * (0.1 + R() * 0.6), sc, v: 4 + R() * 7 + sc * 2, ph: R() * 6.28, pal: PALS[Math.floor(R() * PALS.length)], stripes: 6 + Math.floor(R() * 3) * 2, dir: R() < 0.8 ? 1 : -1 });
     }
-    if (tm !== 2 && this._birdT <= 0 && this._flocks.length < 3) {
-      this._birdT = 10 + R() * 25;
+    for (const bl of this._balloons.slice().sort((p, q) => p.sc - q.sc)) {
+      bl.x += bl.v * bl.dir * dt * (P.flow === undefined ? 1 : Math.max(0.2, P.flow));
+      if (bl.x > W + 80) bl.x = -80; else if (bl.x < -80) bl.x = W + 80;
+      const y = bl.y + Math.sin(t * 0.35 + bl.ph) * 6, sway = Math.sin(t * 0.5 + bl.ph) * 0.05;
+      this._balloon(ctx, bl.x, y, bl.sc, sway, bl, t, tm);
+    }
+    // ---- spawn
+    this._liners = this._liners.filter(l => !l.done);
+    if (this._liners.length < nLin && this._linerT <= 0) {
+      const dir = R() < 0.5 ? 1 : -1, y0 = H * (0.1 + R() * 0.55);
+      this._liners.push({ x: dir > 0 ? -380 : W + 380, y: y0, dir, vy: (R() - 0.5) * 14, v: 80 + R() * 30, trail: [] });
+      this._linerT = (nLin > 1 ? 14 : 45) + R() * 40;
+    }
+    if (tm !== 2 && this._birdT <= 0 && this._flocks.length < nBird) {
+      this._birdT = 8 + R() * 22;
       const dir = R() < 0.5 ? 1 : -1, n = R() < 0.3 ? 1 : 3 + Math.floor(R() * 5), y0 = H * (0.08 + R() * 0.7);
       this._flocks.push({ x: dir > 0 ? -80 : W + 80, y: y0, dir, v: 30 + R() * 30, vy: (R() - 0.5) * 8, ph: R() * 6, n, sc: 1.2 + R() * 0.8 });
     }
-    // birds
+    if (nJet > 0 && !this._jets.length && this._jetT <= 0) {
+      const dir = R() < 0.5 ? 1 : -1, y0 = H * (0.12 + R() * 0.55), v = 300 + R() * 80;
+      this._jets.push({ x: dir > 0 ? -160 : W + 160, y: y0, dir, v, vy: (R() - 0.5) * 24, n: nJet, tr: Array.from({ length: nJet }, () => []), ph: R() * 6 });
+      this._jetT = 35 + R() * 50;
+    }
+    if (!nJet) this._jets.length = 0;
+    // ---- birds
     const ink = tm === 1 ? 'rgba(60,25,70,0.85)' : 'rgba(35,52,80,0.8)';
     ctx.strokeStyle = ink; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (let f = this._flocks.length - 1; f >= 0; f--) {
@@ -138,20 +160,19 @@ IconIsland.theme({
         ctx.beginPath(); ctx.moveTo(bx - w, by - up * 0.5 - 1); ctx.quadraticCurveTo(bx - w * 0.45, by - up - 3 * fl.sc, bx, by); ctx.quadraticCurveTo(bx + w * 0.45, by - up - 3 * fl.sc, bx + w, by - up * 0.5 - 1); ctx.stroke();
       }
     }
-    // airliner
-    const pl = this._plane;
-    if (pl) {
+    // ---- airliners
+    for (const pl of this._liners) {
       pl.x += pl.v * pl.dir * dt; pl.y += pl.vy * dt;
       pl.trail.push([pl.x, pl.y]); if (pl.trail.length > 260) pl.trail.shift();
-      if ((pl.dir > 0 && pl.x > W + 420) || (pl.dir < 0 && pl.x < -420)) { this._plane = null; this._planeT = 45 + R() * 60; return; }
+      if ((pl.dir > 0 && pl.x > W + 420) || (pl.dir < 0 && pl.x < -420)) { pl.done = true; continue; }
       const a = tm === 2 ? 0.28 : tm === 1 ? 0.55 : 0.7, tr = pl.trail;
       if (tr.length > 3) {
         const g = ctx.createLinearGradient(tr[0][0], tr[0][1], pl.x, pl.y);
         g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, tm === 1 ? `rgba(255,225,205,${a})` : `rgba(255,255,255,${a})`);
-        ctx.strokeStyle = g; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] - 1.5); for (const p of tr) ctx.lineTo(p[0], p[1] - 1.5); ctx.stroke();
-        ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] + 1.5); for (const p of tr) ctx.lineTo(p[0], p[1] + 1.5); ctx.stroke();
+        ctx.strokeStyle = g; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] - 1.2); for (const q of tr) ctx.lineTo(q[0], q[1] - 1.2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1] + 1.2); for (const q of tr) ctx.lineTo(q[0], q[1] + 1.2); ctx.stroke();
       }
-      ctx.save(); ctx.translate(pl.x, pl.y); ctx.scale(pl.dir * 1.5, 1.5); ctx.rotate(Math.atan2(pl.vy, pl.v) * 0.6);
+      ctx.save(); ctx.translate(pl.x, pl.y); ctx.scale(pl.dir * 1.1, 1.1); ctx.rotate(Math.atan2(pl.vy, pl.v) * 0.6);
       const body = tm === 2 ? '#8e9cc4' : tm === 1 ? '#f0d4c8' : '#fbfcff', wing = tm === 2 ? '#6f7fae' : tm === 1 ? '#d9b0a6' : '#dfe8f4';
       ctx.fillStyle = 'rgba(10,30,70,0.18)'; ctx.beginPath(); ctx.ellipse(3, 7, 30, 3, 0, 0, 7); ctx.fill();
       ctx.fillStyle = wing;                                                       // wings (seen from slightly below / side), swept back
@@ -170,5 +191,73 @@ IconIsland.theme({
       }
       ctx.restore();
     }
+    // ---- fighter jets in a V formation, fast, with thin contrails
+    for (let j = this._jets.length - 1; j >= 0; j--) {
+      const sq = this._jets[j];
+      sq.x += sq.v * sq.dir * dt; sq.y += sq.vy * dt;
+      if ((sq.dir > 0 && sq.x > W + 260 + sq.n * 20) || (sq.dir < 0 && sq.x < -260 - sq.n * 20)) { this._jets.splice(j, 1); continue; }
+      const a = tm === 2 ? 0.25 : tm === 1 ? 0.5 : 0.65;
+      for (let i = 0; i < sq.n; i++) {
+        const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1, jx = sq.x - sq.dir * row * 40, jy = sq.y + (i ? side * row * 20 : 0) + Math.sin(t * 1.3 + i + sq.ph) * 0.8;
+        const tr = sq.tr[i]; tr.push([jx, jy]); if (tr.length > 70) tr.shift();
+        if (tr.length > 3) {
+          const g = ctx.createLinearGradient(tr[0][0], tr[0][1], jx, jy); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, tm === 1 ? `rgba(255,225,205,${a})` : `rgba(255,255,255,${a})`);
+          ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(tr[0][0], tr[0][1]); for (const q of tr) ctx.lineTo(q[0], q[1]); ctx.stroke();
+        }
+        this._jet(ctx, jx, jy, sq.dir, tm, t + i);
+      }
+    }
+  },
+
+  // small fighter jet, side view with a slightly raised wing, pointing right (flipped by dir)
+  _jet(ctx, x, y, dir, tm, t) {
+    const body = tm === 2 ? '#6f7c9c' : tm === 1 ? '#9c8a98' : '#8d99ab', dark = tm === 2 ? '#4a5678' : tm === 1 ? '#6e5c72' : '#5d6a7e', light = tm === 2 ? '#8e9bbb' : '#c4ceda';
+    ctx.save(); ctx.translate(x, y); ctx.scale(dir * 1.25, 1.25);
+    ctx.fillStyle = 'rgba(10,30,70,0.14)'; ctx.beginPath(); ctx.ellipse(2, 7, 13, 1.6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = dark;                                                                                        // far wing + far tail fin
+    ctx.beginPath(); ctx.moveTo(4, -1); ctx.lineTo(-8, -8); ctx.lineTo(-11, -8); ctx.lineTo(-5, -1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-9, -1); ctx.lineTo(-14, -8); ctx.lineTo(-17, -8); ctx.lineTo(-14, -1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = body; ctx.beginPath();                                                                       // fuselage
+    ctx.moveTo(16, 0.5); ctx.quadraticCurveTo(10, -2.4, 2, -2.2); ctx.lineTo(-14, -1.8); ctx.lineTo(-15, 0); ctx.lineTo(-14, 1.8); ctx.lineTo(2, 2.4); ctx.quadraticCurveTo(10, 1.8, 16, 0.5); ctx.fill();
+    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(2, -2.2); ctx.lineTo(-14, -1.8); ctx.lineTo(-14, -0.8); ctx.lineTo(2, -1); ctx.fill();
+    ctx.fillStyle = tm === 2 ? '#a8c0ff' : '#2d5a9a'; ctx.beginPath(); ctx.ellipse(6, -2, 3.6, 1.3, 0.1, 0, 7); ctx.fill();                      // canopy
+    ctx.fillStyle = body;                                                                                        // near wing + tailplane
+    ctx.beginPath(); ctx.moveTo(4, 1); ctx.lineTo(-9, 9); ctx.lineTo(-12, 9); ctx.lineTo(-6, 1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-10, 1); ctx.lineTo(-15, 6); ctx.lineTo(-17, 6); ctx.lineTo(-15, 1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(-9, -1.8); ctx.lineTo(-15, -9); ctx.lineTo(-18, -9); ctx.lineTo(-16, -1.8); ctx.closePath(); ctx.fill();   // tail fin
+    const fl = 0.7 + 0.3 * Math.sin(t * 30);                                                                      // afterburner
+    ctx.fillStyle = `rgba(255,${tm === 0 ? 170 : 200},80,${tm === 0 ? 0.7 : 0.95})`; ctx.beginPath(); ctx.moveTo(-15, -1); ctx.lineTo(-15 - 6 * fl, 0); ctx.lineTo(-15, 1); ctx.fill();
+    ctx.restore();
+  },
+
+  // hot-air balloon: gored envelope with a basket, swaying gently; lit by its burner at dusk and night
+  _balloon(ctx, x, y, sc, sway, bl, t, tm) {
+    const RW = 18 * sc, RH = 20 * sc;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway);
+    const env = new Path2D();
+    env.moveTo(0, RH * 1.55); env.bezierCurveTo(-RW * 0.45, RH * 1.2, -RW, RH * 0.5, -RW, -RH * 0.2); env.bezierCurveTo(-RW, -RH * 1.05, -RW * 0.45, -RH * 1.55, 0, -RH * 1.55);
+    env.bezierCurveTo(RW * 0.45, -RH * 1.55, RW, -RH * 1.05, RW, -RH * 0.2); env.bezierCurveTo(RW, RH * 0.5, RW * 0.45, RH * 1.2, 0, RH * 1.55);
+    ctx.fillStyle = 'rgba(10,30,70,0.12)'; ctx.save(); ctx.translate(5 * sc, 16 * sc); ctx.fill(env); ctx.restore();
+    ctx.strokeStyle = 'rgba(60,50,40,0.55)'; ctx.lineWidth = 0.7 * sc; ctx.beginPath();                                    // ropes
+    ctx.moveTo(-RW * 0.45, RH * 1.2); ctx.lineTo(-3 * sc, RH * 1.55 + 7 * sc); ctx.moveTo(RW * 0.45, RH * 1.2); ctx.lineTo(3 * sc, RH * 1.55 + 7 * sc); ctx.moveTo(0, RH * 1.55); ctx.lineTo(0, RH * 1.55 + 7 * sc); ctx.stroke();
+    ctx.fillStyle = '#8a5a30'; ctx.fillRect(-3.4 * sc, RH * 1.55 + 7 * sc, 6.8 * sc, 4.6 * sc); ctx.fillStyle = '#b98650'; ctx.fillRect(-3.4 * sc, RH * 1.55 + 7 * sc, 6.8 * sc, 1.3 * sc);   // basket
+    ctx.save(); ctx.clip(env);
+    ctx.fillStyle = bl.pal[0]; ctx.fillRect(-RW, -RH * 1.6, RW * 2, RH * 3.3);
+    const n = bl.stripes;
+    ctx.fillStyle = bl.pal[1];
+    for (let i = 0; i < n; i += 2) {                                                                                       // alternating gores (curved like meridians)
+      const x0 = -RW + (i / n) * RW * 2, x1 = -RW + ((i + 1) / n) * RW * 2;
+      ctx.beginPath(); ctx.moveTo(x0 * 0.05, -RH * 1.55); ctx.quadraticCurveTo(x0 * 1.1, 0, x0 * 0.08, RH * 1.55); ctx.lineTo(x1 * 0.08, RH * 1.55); ctx.quadraticCurveTo(x1 * 1.1, 0, x1 * 0.05, -RH * 1.55); ctx.closePath(); ctx.fill();
+    }
+    const g = ctx.createRadialGradient(-RW * 0.35, -RH * 0.5, 1, 0, 0, RH * 1.7);                                          // light from the top left
+    g.addColorStop(0, 'rgba(255,255,255,0.42)'); g.addColorStop(0.45, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(20,10,40,0.34)'); ctx.fillStyle = g; ctx.fillRect(-RW, -RH * 1.6, RW * 2, RH * 3.3);
+    if (tm === 2) { ctx.fillStyle = 'rgba(8,14,50,0.4)'; ctx.fillRect(-RW, -RH * 1.6, RW * 2, RH * 3.3); }
+    else if (tm === 1) { ctx.fillStyle = 'rgba(255,120,60,0.16)'; ctx.fillRect(-RW, -RH * 1.6, RW * 2, RH * 3.3); }
+    if (tm !== 0) { const gl = ctx.createRadialGradient(0, RH * 1.1, 0, 0, RH * 1.1, RH * 1.1); gl.addColorStop(0, `rgba(255,190,90,${tm === 2 ? 0.55 : 0.3})`); gl.addColorStop(1, 'rgba(255,190,90,0)'); ctx.fillStyle = gl; ctx.fillRect(-RW, 0, RW * 2, RH * 1.7); }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(40,20,30,0.35)'; ctx.lineWidth = 0.8; ctx.stroke(env);
+    const fl = 0.75 + 0.25 * Math.sin(t * 9 + bl.ph);                                                                      // burner flame
+    ctx.fillStyle = `rgba(255,${tm === 0 ? 180 : 210},70,${0.9 * fl})`; ctx.beginPath(); ctx.ellipse(0, RH * 1.55 + 4.5 * sc, 1.1 * sc, 2.6 * sc * fl, 0, 0, 7); ctx.fill();
+    ctx.restore();
   },
 });

@@ -247,7 +247,7 @@
       "id": "sky",
       "adaptive": true,
       "name": "Sky",
-      "desc": "A cartoon sky where your icons sit on puffy clouds. Choose day, dusk or night",
+      "desc": "A cartoon sky where your icons sit on puffy clouds, with hot-air balloons, airliners, fighter jets and birds passing by. Choose day, dusk or night",
       "page": "sky.html",
       "status": "ready",
       "product": "free",
@@ -287,16 +287,47 @@
               "step": 0.05,
               "default": 1,
               "format": "times"
+            }
+          ]
+        },
+        {
+          "name": "Aircraft & balloons",
+          "params": [
+            {
+              "key": "balloons",
+              "label": "Hot-air balloons",
+              "hint": "Small balloons drifting slowly across the sky (0 = none)",
+              "min": 0,
+              "max": 8,
+              "step": 1,
+              "default": 3
             },
             {
-              "key": "life",
-              "label": "Planes & birds",
-              "hint": "An airliner and flocks of birds passing now and then",
-              "options": [
-                "Off",
-                "On"
-              ],
+              "key": "liners",
+              "label": "Airliners",
+              "hint": "How many passenger jets with contrails can be in the sky at once (0 = none)",
+              "min": 0,
+              "max": 3,
+              "step": 1,
               "default": 1
+            },
+            {
+              "key": "jets",
+              "label": "Fighter jets",
+              "hint": "Size of the fighter squadron that flies past now and then: 1 is a single jet, more fly in V formation (0 = none)",
+              "min": 0,
+              "max": 6,
+              "step": 1,
+              "default": 3
+            },
+            {
+              "key": "birds",
+              "label": "Bird flocks",
+              "hint": "How many flocks of birds can glide through at once (0 = none, no birds at night)",
+              "min": 0,
+              "max": 4,
+              "step": 1,
+              "default": 2
             }
           ]
         }

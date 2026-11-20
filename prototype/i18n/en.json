@@ -11,16 +11,16 @@
     "autostart": "Start with Windows",
     "autostartTitle": "Run Icon Island automatically when you sign in",
     "autostartBlocked": "Start with Windows may have been blocked",
-    "autostartWarnSw": "Icon Island didn't start automatically this time \u2014 {sw} may have blocked it. Open {sw}, find Icon Island in its startup manager and set it to Allow.",
-    "autostartWarnGeneric": "Icon Island didn't start automatically this time \u2014 your security software or the Windows Startup apps setting may have blocked it. Turn Icon Island on in your security software's startup manager, or in Windows Settings \u2192 Apps \u2192 Startup.",
+    "autostartWarnSw": "Icon Island didn't start automatically this time — {sw} may have blocked it. Open {sw}, find Icon Island in its startup manager and set it to Allow.",
+    "autostartWarnGeneric": "Icon Island didn't start automatically this time — your security software or the Windows Startup apps setting may have blocked it. Turn Icon Island on in your security software's startup manager, or in Windows Settings → Apps → Startup.",
     "gotIt": "Got it",
     "updateAvailable": "Update available",
     "updateVersion": "Icon Island {version} is ready. Your current theme and settings will be kept.",
     "updateProgram": "Update now",
     "updateRetry": "Retry update",
-    "updateWorking": "Updating\u2026",
-    "updateDownloading": "Downloading and installing\u2026 {progress}",
-    "updateInstalling": "Installing the update\u2026 {progress}",
+    "updateWorking": "Updating…",
+    "updateDownloading": "Downloading and installing… {progress}",
+    "updateInstalling": "Installing the update… {progress}",
     "updateCompletedTitle": "Update complete",
     "updateCompleted": "The update has been downloaded and installed. If Icon Island does not restart automatically, open it again.",
     "updateDone": "Done",
@@ -31,7 +31,7 @@
     "updateStoreRequired": "This update method is only available in the Microsoft Store edition.",
     "updateFailed": "The update failed. Check your connection or Microsoft Store and try again.",
     "updateCheckingTitle": "Checking for updates",
-    "updateChecking": "Connecting to the update server and checking for a new version\u2026",
+    "updateChecking": "Connecting to the update server and checking for a new version…",
     "updateFailedTitle": "Update not completed",
     "updateCheckFailedTitle": "Couldn't check for updates",
     "networkTimeout": "The connection or download timed out. Check your network, proxy or firewall and try again. If other websites work, the server may also be responding slowly.",
@@ -43,27 +43,27 @@
     "serverInvalid": "The server returned an unrecognized response. Try again later or contact support if this continues.",
     "downloadInvalid": "The download was incomplete or failed security verification, so installation was stopped. Try again or contact support if this keeps happening.",
     "livePreview": "Live preview",
-    "previewIcons": "Live preview \u00b7 using the {n} icons on your desktop",
-    "previewNoIcons": "Live preview \u00b7 desktop icons are hidden",
+    "previewIcons": "Live preview · using the {n} icons on your desktop",
+    "previewNoIcons": "Live preview · desktop icons are hidden",
     "refresh": "Refresh",
     "refreshTitle": "Generate a new scene for this theme",
     "shareImage": "Share image",
     "shareImageTitle": "Share your desktop image while protecting your privacy",
     "shareVideo": "Share video",
     "shareVideoTitle": "Share your desktop animation while protecting your privacy",
-    "generating": "Generating\u2026",
-    "preparingRec": "Getting ready\u2026",
+    "generating": "Generating…",
+    "preparingRec": "Getting ready…",
     "recording": "Recording {p}%",
-    "savingVideo": "Saving\u2026",
+    "savingVideo": "Saving…",
     "shareFailImage": "Couldn't create the image: {msg}",
     "shareFailVideo": "Couldn't record the video: {msg}",
     "unknownReason": "unknown error",
     "shareReadyImage": "Your desktop picture is ready",
     "shareReadyVideo": "Your desktop clip is ready",
     "sharePrivacy": "Icons are replaced with sample icons and file names with color blocks, so none of your files are shown.",
-    "shareCopiedImage": "The image is on your clipboard \u2014 paste it straight into a chat or a post.",
-    "shareCopiedVideo": "The video file is on your clipboard \u2014 paste it into a chat window to send it.",
-    "shareBrowserHint": " (Browser preview: click \u201c{btn}\u201d to download.)",
+    "shareCopiedImage": "The image is on your clipboard — paste it straight into a chat or a post.",
+    "shareCopiedVideo": "The video file is on your clipboard — paste it into a chat window to send it.",
+    "shareBrowserHint": " (Browser preview: click “{btn}” to download.)",
     "savedTo": "Saved to {path}",
     "openFolder": "Show in folder",
     "openImage": "Open image",
@@ -73,7 +73,7 @@
     "ok": "OK",
     "sharePreviewAlt": "Preview of the shared image",
     "autosave": "Changes are saved automatically and applied to your desktop right away",
-    "saved": "Saved \u2713",
+    "saved": "Saved ✓",
     "resetAll": "Reset all",
     "resetAllTitle": "Reset all settings of this theme to their defaults",
     "helpButtonTitle": "Common questions and troubleshooting",
@@ -81,8 +81,8 @@
     "helpSubtitle": "Common questions and troubleshooting",
     "helpWallpaperQ": "Icon Island keeps flickering or restarting. How do I fix it?",
     "helpWallpaperA": "If your regular Windows wallpaper changes automatically, each change can make Icon Island flicker or restart. Use a fixed background that does not rotate.",
-    "helpWallpaperStep1": "Open Windows Settings \u2192 Personalization \u2192 Background.",
-    "helpWallpaperStep2": "Set \u2018Personalize your background\u2019 to \u2018Picture\u2019 or \u2018Solid color\u2019. Do not use \u2018Slideshow\u2019 or \u2018Windows spotlight\u2019.",
+    "helpWallpaperStep1": "Open Windows Settings → Personalization → Background.",
+    "helpWallpaperStep2": "Set ‘Personalize your background’ to ‘Picture’ or ‘Solid color’. Do not use ‘Slideshow’ or ‘Windows spotlight’.",
     "helpWallpaperStep3": "Restart Icon Island after changing this setting.",
     "badgeOn": "In use",
     "badgeReady": "Available",
@@ -96,7 +96,7 @@
     "comingSoon": "Coming soon:"
   },
   "host": {
-    "traySettings": "Settings\u2026",
+    "traySettings": "Settings…",
     "trayPause": "Pause animation",
     "trayReload": "Reload",
     "trayAutostart": "Start with Windows",
@@ -241,9 +241,10 @@
     },
     "sky": {
       "name": "Sky",
-      "desc": "A cartoon sky where your icons sit on puffy clouds. Choose day, dusk or night",
+      "desc": "A cartoon sky where your icons sit on puffy clouds, with hot-air balloons, airliners, fighter jets and birds passing by. Choose day, dusk or night",
       "groups": [
-        "Sky"
+        "Sky",
+        "Aircraft & balloons"
       ],
       "params": {
         "time": {
@@ -263,13 +264,21 @@
           "label": "Drift speed",
           "hint": "How fast the clouds drift"
         },
-        "life": {
-          "label": "Planes & birds",
-          "hint": "An airliner and flocks of birds passing now and then",
-          "options": [
-            "Off",
-            "On"
-          ]
+        "balloons": {
+          "label": "Hot-air balloons",
+          "hint": "Small balloons drifting slowly across the sky (0 = none)"
+        },
+        "liners": {
+          "label": "Airliners",
+          "hint": "How many passenger jets with contrails can be in the sky at once (0 = none)"
+        },
+        "jets": {
+          "label": "Fighter jets",
+          "hint": "Size of the fighter squadron that flies past now and then: 1 is a single jet, more fly in V formation (0 = none)"
+        },
+        "birds": {
+          "label": "Bird flocks",
+          "hint": "How many flocks of birds can glide through at once (0 = none, no birds at night)"
         }
       }
     },
