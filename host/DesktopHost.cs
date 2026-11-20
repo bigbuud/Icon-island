@@ -190,6 +190,7 @@ static class Settings
     static readonly string FilePath = Path.Combine(Log.DataDir, "settings.json");
     public static string Theme = "beach";
     public static bool AllScreens = true;
+    public static bool Span = true;          // one continuous scene across all monitors
     public static string Lang = "auto";
     public static Dictionary<string, Dictionary<string, object>> Params = new Dictionary<string, Dictionary<string, object>>();
 
@@ -204,6 +205,7 @@ static class Settings
             if (root.TryGetValue("theme", out v) && v is string) Theme = (string)v;
             if (root.TryGetValue("lang", out v) && v is string) Lang = (string)v;
             if (root.TryGetValue("allScreens", out v) && v is bool) AllScreens = (bool)v;
+            if (root.TryGetValue("span", out v) && v is bool) Span = (bool)v;
             if (root.TryGetValue("params", out v) && v is Dictionary<string, object>)
                 foreach (var kv in (Dictionary<string, object>)v)
                 {
@@ -220,7 +222,7 @@ static class Settings
         try
         {
             Directory.CreateDirectory(Log.DataDir);
-            File.WriteAllText(FilePath, Json.Stringify(Json.Obj("version", 1, "theme", Theme, "lang", Lang, "allScreens", AllScreens, "params", Params)), new UTF8Encoding(false));
+            File.WriteAllText(FilePath, Json.Stringify(Json.Obj("version", 1, "theme", Theme, "lang", Lang, "allScreens", AllScreens, "span", Span, "params", Params)), new UTF8Encoding(false));
         }
         catch (Exception ex) { Log.Write("Saving settings failed: " + ex.Message); }
     }
@@ -298,7 +300,7 @@ class HostContext : ApplicationContext
     string screenSig = "";
     volatile bool displayChanged;
     DateTime displayDue = DateTime.MaxValue;
-    MenuItem allScreensItem;
+    MenuItem allScreensItem, spanItem;
     void EachForm(Action<WallpaperForm> a) { foreach (var f in forms.ToArray()) { try { a(f); } catch (Exception ex) { Log.Write("Wallpaper window operation failed: " + ex.Message); } } }
     static string ScreenSignature() { var sb = new StringBuilder(); foreach (Screen sc in Screen.AllScreens) sb.Append(sc.Bounds).Append(';'); return sb.ToString(); }
     SettingsForm settingsWin;
@@ -357,6 +359,7 @@ class HostContext : ApplicationContext
             pauseItem,
             reloadItem = new MenuItem(I18n.T("trayReload"), delegate { EachForm(delegate(WallpaperForm f) { f.Reload(); }); }),
             allScreensItem = new MenuItem(I18n.T("trayAllScreens"), delegate { SetAllScreens(!allScreensItem.Checked); }),
+            spanItem = new MenuItem(I18n.T("traySpan"), delegate { SetSpan(!spanItem.Checked); }),
             autoStartItem,
             new MenuItem("-"),
             exitItem = new MenuItem(I18n.T("trayExit"), delegate { Exit(); }),
@@ -364,6 +367,7 @@ class HostContext : ApplicationContext
         tray.MouseUp += delegate(object s, MouseEventArgs e) { if (e.Button == MouseButtons.Left) ShowMenu(); };
         tray.DoubleClick += delegate { OpenSettings(); };
         allScreensItem.Checked = Settings.AllScreens;
+        spanItem.Checked = Settings.Span;
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         tray.Visible = true;
         ShowWelcomeOnce(hotkeyOk);
@@ -383,6 +387,7 @@ class HostContext : ApplicationContext
         pauseItem.Text = I18n.T("trayPause");
         reloadItem.Text = I18n.T("trayReload");
         allScreensItem.Text = I18n.T("trayAllScreens");
+        spanItem.Text = I18n.T("traySpan");
         autoStartItem.Text = I18n.T("trayAutostart");
         exitItem.Text = I18n.T("trayExit");
     }
@@ -848,6 +853,22 @@ class HostContext : ApplicationContext
         var screens = new List<Screen>(Screen.AllScreens);
         screens.Sort(delegate(Screen a, Screen b) { return (b.Primary ? 1 : 0) - (a.Primary ? 1 : 0); });
         if (!Settings.AllScreens) screens = screens.GetRange(0, 1);
+        if (Settings.Span && screens.Count > 1)
+        {
+            // one window over the whole virtual desktop: the scene (and everything that moves in it) runs on across the monitors
+            Rectangle u = screens[0].Bounds;
+            var parts = new List<Rectangle>();
+            foreach (Screen sc in screens) { u = Rectangle.Union(u, sc.Bounds); parts.Add(sc.Bounds); }
+            var f = new WallpaperForm(pageDir, page, manualPause, u, true);
+            f.Parts = parts;
+            f.SettingsJson = SettingsMessage;
+            f.IconsChanged += delegate(string json) { if (settingsWin != null) settingsWin.Post(json); };
+            f.RecordProgress += delegate(string p) { if (settingsWin != null) settingsWin.Post("{\"t\":\"recProgress\",\"p\":" + p + "}"); };
+            f.HandleDestroyed += OnFormGone;
+            forms.Add(f);
+            f.Show();
+        }
+        else
         foreach (Screen sc in screens)
         {
             var f = new WallpaperForm(pageDir, page, manualPause, sc.Bounds, sc.Primary);
@@ -874,6 +895,15 @@ class HostContext : ApplicationContext
         forms.Clear();
         foreach (var f in old) { deadForms.Add(f); try { f.Shutdown(); } catch { } }
         nextStart = DateTime.Now.AddMilliseconds(600);
+    }
+
+    void SetSpan(bool on)
+    {
+        if (Settings.Span == on) return;
+        Settings.Span = on;
+        spanItem.Checked = on;
+        SaveSoon();
+        if (!exiting) RestartAll(on ? "one continuous scene across all monitors" : "separate scene per monitor");
     }
 
     void SetAllScreens(bool on)
@@ -1109,6 +1139,7 @@ class WallpaperForm : Form
     protected override bool ShowWithoutActivation { get { return true; } }
 
     public readonly bool IsPrimary;
+    public List<Rectangle> Parts;       // set when one window spans several monitors
     public WallpaperForm Previous;      // the window of the previous monitor (z-order chain)
 
     public WallpaperForm(string pageDir, string page, bool manualPause, Rectangle bounds, bool primary)
@@ -1458,7 +1489,13 @@ class WallpaperForm : Form
                 Native.GetWindowRect(fg, out wr);
                 bool covers = wr.Left <= screen.Left && wr.Top <= screen.Top && wr.Right >= screen.Right && wr.Bottom >= screen.Bottom;
                 int cx = (wr.Left + wr.Right) / 2, cy = (wr.Top + wr.Bottom) / 2;
-                if (screen.Contains(cx, cy) && (covers || Native.IsZoomed(fg))) { pause = true; pauseBy = c; }
+                if (Parts != null)
+                {
+                    // one window spans all monitors: only a window that fully covers a monitor (fullscreen) pauses it
+                    foreach (Rectangle pr in Parts)
+                        if (wr.Left <= pr.Left && wr.Top <= pr.Top && wr.Right >= pr.Right && wr.Bottom >= pr.Bottom) { pause = true; pauseBy = c; }
+                }
+                else if (screen.Contains(cx, cy) && (covers || Native.IsZoomed(fg))) { pause = true; pauseBy = c; }
             }
         }
         int p = pause ? 1 : 0;

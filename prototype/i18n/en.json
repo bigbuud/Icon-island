@@ -118,7 +118,8 @@
     "errNoPage": "Page not found: {path}",
     "errNoDesktop": "Couldn't find the desktop window, so the wallpaper can't be attached.",
     "errStart": "Couldn't start: {msg}",
-    "trayAllScreens": "Use all monitors"
+    "trayAllScreens": "Use all monitors",
+    "traySpan": "One scene across all monitors"
   },
   "themes": {
     "beach": {
