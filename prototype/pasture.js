@@ -9,7 +9,7 @@ IconIsland.theme({
   _herd: null, _bg: null, _grass: null, _comp_c: null, _tmp: null, _mask: null, _clouds: [], _fk: '', _seed: 1,
 
   init(env, seed) {
-    this._seed = seed; this._sig = ''; this._herd = new Fauna.Herd(); this._fk = '';
+    this._seed = seed; this._sig = ''; this._herd = new Fauna.Herd(); this._herd.kindScale = { cow: 0.8, horse: 0.8 }; this._fk = '';
     const r = env.rng(seed + 5);
     this._clouds = Array.from({ length: 4 }, () => ({ x: r() * env.W, y: r() * env.H, s: 0.8 + r() * 0.9, v: 5 + r() * 6 }));
   },

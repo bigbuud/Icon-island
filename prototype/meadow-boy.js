@@ -373,7 +373,7 @@ void main() {
   return {draw(now,visible=true){
     if(ready<2)return null;
     const dt=previousTime===null?0:Math.min(.05,Math.max(0,(now-previousTime)/1000));previousTime=now;time+=dt;
-    const s=Math.max(.24,Math.min(1.25,W/1379,(H-TASKBAR)/1141))*.35;
+    const s=Math.max(.24,Math.min(1.25,W/1379,(H-TASKBAR)/1141))*.21;
     if(now-lastCheck>500){
       lastCheck=now;
       const next=[W,H,TASKBAR].join(',');

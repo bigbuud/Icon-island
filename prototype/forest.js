@@ -36,7 +36,7 @@ IconIsland.theme({
     this._shrooms = Array.from({ length: 260 }, () => ({ x: r() * W, y: r() * H, z: 0.8 + r() * 0.6, n: 1 + Math.floor(r() * 3), o: r() * 6 }));
     this._leaves = Array.from({ length: 30 }, () => ({ x: r() * W, y: r() * H, ph: r() * 6.28, z: 3 + r() * 3, c: Math.floor(r() * 4), vy: 20 + r() * 22 }));
     this._flies = [{ x: W * 0.4, y: H * 0.5, o: 0 }, { x: W * 0.6, y: H * 0.4, o: 2.4 }];
-    this._seed = seed; this._key = ''; this._herd = new Fauna.Herd();
+    this._seed = seed; this._key = ''; this._herd = new Fauna.Herd(); this._herd.kindScale = { deer: 0.82, boar: 0.8, fox: 0.76, rabbit: 1 };
   },
 
   rebuild(env) {
