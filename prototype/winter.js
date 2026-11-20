@@ -1,5 +1,5 @@
 // Theme "Winter": a snowy landscape from above. Every group of icons sits on its own frozen pond with skaters;
-// reindeer, arctic foxes and penguins roam the snow, cabins puff smoke, snowmen stand around and snow keeps falling.
+// reindeer, arctic foxes and penguins roam the snow, cabins puff smoke, a mix of firs, spruces, pines, bare oaks, birches and snowy bushes stands around and snow keeps falling.
 IconIsland.theme({
   params: { snow: 1, critters: 1, time: 0 },
   R: 64,
@@ -21,27 +21,49 @@ IconIsland.theme({
     b.globalAlpha = 1;
     // ---- items: cabins and snowmen (drawn every frame, fading when a pond grows over them)
     const items = [], put = (type, rad, n) => { for (let i = 0, tries = 0; i < n && tries < 80; tries++) { const x = 90 + r() * (W - 180), y = 90 + r() * (H - 180); if (items.some(o => Math.hypot(o.x - x, o.y - y) < o.rad + rad + 30)) continue; items.push({ type, x, y, rad, rot: (r() - 0.5) * 0.6, ph: r() * 6 }); i++; } };
-    put('cabin', 82, Math.max(1, Math.round(W * H / 900000)) + 1); put('snowman', 28, Math.round(W * H / 800000) + 1);
+    put('cabin', 82, Math.max(1, Math.round(W * H / 900000)) + 1);
     this._items = items;
-    // ---- fir trees with snow on top
-    const SZ = 120, TS = 1.5, spr = [];
-    for (let v = 0; v < 4; v++) {
-      const cs = mk(SZ * S * TS, SZ * S * TS), c = cs.getContext('2d'), rr = env.rng(seed * 13 + v * 3 + 1), cx = 56, cy = 54, R0 = 38 + (v % 2) * 3; c.scale(S * TS, S * TS);
-      c.fillStyle = 'rgba(40,70,120,0.3)'; c.beginPath(); c.ellipse(cx + 12, cy + 14, R0, R0 * 0.85, 0, 0, 7); c.fill();
-      const cols = ['#173f33', '#235a44', '#36765a', '#559a78'];
-      [[R0, 12], [R0 * 0.76, 11], [R0 * 0.52, 9], [R0 * 0.3, 7]].forEach((t, ti) => {
-        const star = (rad, col, ox, oy, rot, k) => { c.fillStyle = col; c.beginPath(); for (let i = 0; i < t[1] * 2; i++) { const a = i / (t[1] * 2) * 6.283 + rot, q = i % 2 ? rad * 0.56 : rad * (0.95 + k * 0.08); c[i ? 'lineTo' : 'moveTo'](cx + ox + Math.cos(a) * q, cy + oy + Math.sin(a) * q); } c.closePath(); c.fill(); };
-        const rot = ti * 0.3 + rr() * 0.2; star(t[0], cols[ti], -ti * 1.5, -ti * 1.5, rot, rr());
-        star(t[0] * 0.8, 'rgba(250,253,255,0.9)', -ti * 1.5 - 3, -ti * 1.5 - 3, rot + 0.05, 0.3);
+    // ---- trees: firs, slim spruces, round pines, bare oaks, birches and snowy bushes
+    const SZ = 120, TS = 1.5, spr = { fir: [], spruce: [], pine: [], bare: [], birch: [], bush: [] };
+    const mkSprite = (kind, v, draw) => { const cs = mk(SZ * S * TS, SZ * S * TS), c = cs.getContext('2d'), rr = env.rng(seed * 13 + v * 7 + kind.length * 31); c.scale(S * TS, S * TS); draw(c, rr, 56, 54); spr[kind].push(cs); };
+    const shadow = (c, cx, cy, R0) => { c.fillStyle = 'rgba(40,70,120,0.3)'; c.beginPath(); c.ellipse(cx + 12, cy + 14, R0, R0 * 0.85, 0, 0, 7); c.fill(); };
+    const tiers = (c, rr, cx, cy, R0, pts, cols, ratio, k) => {
+      [[R0, pts], [R0 * 0.76, pts - 1], [R0 * 0.52, pts - 3], [R0 * 0.3, pts - 5]].forEach((t, ti) => {
+        const star = (rad, col, ox, oy, rot, kk) => { c.fillStyle = col; c.beginPath(); for (let i = 0; i < t[1] * 2; i++) { const a = i / (t[1] * 2) * 6.283 + rot, q = i % 2 ? rad * ratio : rad * (0.95 + kk * 0.08); c[i ? 'lineTo' : 'moveTo'](cx + ox + Math.cos(a) * q, cy + oy + Math.sin(a) * q); } c.closePath(); c.fill(); };
+        const rot = ti * 0.3 + rr() * 0.2; star(t[0], cols[ti], -ti * 1.5, -ti * 1.5, rot, rr()); star(t[0] * 0.8, 'rgba(250,253,255,' + k + ')', -ti * 1.5 - 3, -ti * 1.5 - 3, rot + 0.05, 0.3);
       });
       c.fillStyle = '#fff'; c.beginPath(); c.arc(cx - 6, cy - 6, 3.4, 0, 7); c.fill();
-      spr.push(cs);
-    }
+    };
+    for (let v = 0; v < 4; v++) mkSprite('fir', v, (c, rr, cx, cy) => { const R0 = 38 + (v % 2) * 3; shadow(c, cx, cy, R0); tiers(c, rr, cx, cy, R0, 12, ['#173f33', '#235a44', '#36765a', '#559a78'], 0.56, 0.9); });
+    for (let v = 0; v < 3; v++) mkSprite('spruce', v, (c, rr, cx, cy) => { const R0 = 33; shadow(c, cx, cy, R0); tiers(c, rr, cx, cy, R0, 9, ['#0e2c2e', '#17463f', '#256052', '#3f8470'], 0.42, 0.72); });
+    for (let v = 0; v < 3; v++) mkSprite('pine', v, (c, rr, cx, cy) => {
+      shadow(c, cx, cy, 36);
+      for (let i = 0; i < 9; i++) { const a = rr() * 6.283, d = rr() * 22, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, q = 12 + rr() * 8; const g = c.createRadialGradient(x - 3, y - 3, 1, x, y, q); g.addColorStop(0, '#4a8a6a'); g.addColorStop(1, '#1d4a3a'); c.fillStyle = g; c.beginPath(); c.arc(x, y, q, 0, 7); c.fill(); c.fillStyle = 'rgba(250,253,255,0.88)'; c.beginPath(); c.ellipse(x - 3, y - 4, q * 0.7, q * 0.5, -0.4, 0, 7); c.fill(); }
+    });
+    const branches = (c, rr, cx, cy, len, col, snow, wid, spread) => {
+      const go = (x, y, a, l, d, w) => { const x2 = x + Math.cos(a) * l, y2 = y + Math.sin(a) * l; c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x2, y2); c.stroke(); c.strokeStyle = snow; c.globalAlpha = 0.85; c.lineWidth = Math.max(0.6, w * 0.45); c.beginPath(); c.moveTo(x - 0.8, y - 0.9); c.lineTo(x2 - 0.8, y2 - 0.9); c.stroke(); c.globalAlpha = 1; if (d > 0) { const n = 2 + (rr() < 0.4 ? 1 : 0); for (let i = 0; i < n; i++) go(x2, y2, a + (i - (n - 1) / 2) * spread + (rr() - 0.5) * 0.35, l * (0.66 + rr() * 0.12), d - 1, w * 0.68); } else { c.fillStyle = '#fff'; c.beginPath(); c.arc(x2, y2, 1.1, 0, 7); c.fill(); } };
+      const n = 6 + ((rr() * 3) | 0); for (let i = 0; i < n; i++) go(cx, cy, i / n * 6.283 + rr() * 0.4, len * (0.8 + rr() * 0.3), 3, wid);
+    };
+    for (let v = 0; v < 3; v++) mkSprite('bare', v, (c, rr, cx, cy) => { shadow(c, cx, cy, 30); branches(c, rr, cx, cy, 15, '#4a382c', '#ffffff', 3.4, 0.6); c.fillStyle = '#3a2a20'; c.beginPath(); c.arc(cx, cy, 4.2, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(cx - 1, cy - 1, 2.6, 0, 7); c.fill(); });
+    for (let v = 0; v < 3; v++) mkSprite('birch', v, (c, rr, cx, cy) => { shadow(c, cx, cy, 26); branches(c, rr, cx, cy, 12, '#9a968c', '#ffffff', 2.4, 0.7); c.fillStyle = '#d8d4cc'; c.beginPath(); c.arc(cx, cy, 3, 0, 7); c.fill(); c.fillStyle = '#2a2824'; c.fillRect(cx - 2, cy - 0.6, 1.6, 1); });
+    for (let v = 0; v < 3; v++) mkSprite('bush', v, (c, rr, cx, cy) => {
+      shadow(c, cx, cy, 30);
+      for (let i = 0; i < 6; i++) { const a = rr() * 6.283, d = rr() * 17, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, q = 11 + rr() * 8, g = c.createRadialGradient(x - 3, y - 3, 1, x, y, q); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#bcd2ec'); c.fillStyle = g; c.beginPath(); c.arc(x, y, q, 0, 7); c.fill(); }
+      c.fillStyle = '#2f6a4a'; for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(cx + (rr() - 0.5) * 36, cy + (rr() - 0.5) * 30, 3.2, 1.6, rr() * 3, 0, 7); c.fill(); }
+      if (v !== 1) { c.fillStyle = '#c8323a'; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(cx + (rr() - 0.5) * 30, cy + (rr() - 0.5) * 26, 1.7, 0, 7); c.fill(); } }
+    });
     this._trees = [];
-    for (let i = 0, n = W * H / 55000, tries = 0; i < n && tries < 300; tries++) {
-      const x = r() * W, y = r() * H, z = 22 + r() * 16;
+    const pickKind = (x, y) => { const f = env.fbm(x / 260, y / 260, seed + 30, 3) > 0.55, q = r(); if (f) return q < 0.5 ? 'fir' : q < 0.75 ? 'spruce' : q < 0.88 ? 'pine' : 'bare'; return q < 0.28 ? 'bare' : q < 0.52 ? 'birch' : q < 0.67 ? 'fir' : q < 0.8 ? 'pine' : q < 0.9 ? 'spruce' : 'bush'; };
+    const zr = { fir: [28, 48], spruce: [24, 42], pine: [26, 44], bare: [28, 44], birch: [20, 32], bush: [14, 24] };
+    for (let i = 0, n = W * H / 32000, tries = 0; i < n && tries < 600; tries++) {
+      const x = r() * W, y = r() * H, kind = pickKind(x, y), z = zr[kind][0] + r() * (zr[kind][1] - zr[kind][0]);
       if (items.some(o => Math.hypot(o.x - x, o.y - y) < o.rad + z)) continue;
-      this._trees.push([x, y, z, spr[Math.floor(r() * 4)]]); i++;
+      const set = spr[kind]; this._trees.push([x, y, z, set[Math.floor(r() * set.length)]]); i++;
+    }
+    for (let i = 0, n = W * H / 60000, tries = 0; i < n && tries < 300; tries++) {                       // small bushes and saplings in between
+      const x = r() * W, y = r() * H, kind = r() < 0.7 ? 'bush' : 'birch', z = kind === 'bush' ? 10 + r() * 8 : 14 + r() * 6;
+      if (items.some(o => Math.hypot(o.x - x, o.y - y) < o.rad + z)) continue;
+      const set = spr[kind]; this._trees.push([x, y, z, set[Math.floor(r() * set.length)]]); i++;
     }
     this._trees.sort((p, q) => p[1] - q[1]);
     this._bg = bg;

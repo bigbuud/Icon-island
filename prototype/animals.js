@@ -20,7 +20,7 @@ const Fauna = (() => {
     adult:  { size: 29, speed: 15, turn: 2.5 },
     dog:    { size: 15, speed: 55, turn: 5.0 },
     camel:  { size: 50, speed: 12, turn: 1.2 },
-    skater: { size: 22, speed: 40, turn: 1.6 },
+    skater: { size: 17, speed: 40, turn: 1.6 },
     penguin:{ size: 17, speed: 14, turn: 2.2 },
     reindeer:{ size: 33, speed: 17, turn: 2.2 },
     arcticfox:{ size: 22, speed: 20, turn: 3.0 },
