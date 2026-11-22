@@ -29,6 +29,29 @@ Icon Island is a free fork of [Deskland Preview](https://github.com/BLEZZ0102/De
 | Forest | Gouache forest of broadleaf, spruce, pine and birch with roaming deer, boar, foxes and rabbits (summer / autumn / spring). |
 | Lotus pond | Lily pads, lotus flowers and koi that swim between icons. |
 
+## Download and install
+
+Get the latest `IconIsland-<version>-win-x64-Setup.exe` from the [Releases page](https://github.com/bigbuud/Icon-island/releases/tag/latest) and run it. Every release also contains a `.sha256` file with the installer's checksum.
+
+### The SmartScreen warning
+
+The installer is **not code-signed**: a signing certificate costs money and this is a free hobby project. Because of that, Windows SmartScreen may show *"Windows protected your PC"* when you start the installer. This is normal for new, unsigned software and does not mean the file is malicious. To continue:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+If you would rather check the file first, verify that it is the one built by this repository (see below), or build it yourself from source — the whole installer is produced by the public [GitHub Actions workflow](.github/workflows/build-windows.yml) from the code in this repo.
+
+### Verify the download (SHA-256)
+
+Compare the checksum of the file you downloaded with the one published in the release notes and in the `.sha256` file. In PowerShell:
+
+```powershell
+Get-FileHash .\IconIsland-<version>-win-x64-Setup.exe -Algorithm SHA256
+```
+
+The `Hash` value must match exactly (case does not matter). If it does not, do not run the installer and download it again.
+
 ## Requirements
 
 - Windows 10 or 11, 64-bit, with Microsoft Edge WebView2 Runtime.
@@ -68,7 +91,7 @@ Create `mytheme.html` (copy `aurora.html`) and `mytheme.js` calling `IconIsland.
 
 - Windows Spotlight or a wallpaper slideshow can briefly flash when Windows changes the background image.
 - All monitors use the same theme and settings.
-- The installer is unsigned, so SmartScreen may warn.
+- The installer is unsigned, so SmartScreen may warn. See [The SmartScreen warning](#the-smartscreen-warning) for how to continue and how to verify the download.
 
 ## License
 

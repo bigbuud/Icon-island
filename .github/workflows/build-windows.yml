@@ -47,7 +47,31 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          INSTALLER=$(ls dist/IconIsland-*-Setup.exe | head -n 1)
+          NAME=$(basename "$INSTALLER")
+          HASH=$(sha256sum "$INSTALLER" | cut -d' ' -f1)
+          cat > release-notes.md <<EOF
+          Automatic build of commit \`${GITHUB_SHA::7}\`. Download \`${NAME}\` below and run it.
+
+          ### Windows SmartScreen warning
+          This installer is **not code-signed** (a signing certificate costs money and Icon Island is a free project), so Windows SmartScreen may show "Windows protected your PC". That is expected for new, unsigned software. To continue, click **More info** and then **Run anyway**.
+
+          ### Verify your download
+          SHA-256 of \`${NAME}\`:
+
+          \`\`\`
+          ${HASH}
+          \`\`\`
+
+          Check it in PowerShell (the \`Hash\` value must match):
+
+          \`\`\`powershell
+          Get-FileHash .\\${NAME} -Algorithm SHA256
+          \`\`\`
+
+          The same checksum is available as \`${NAME}.sha256\`. More details in the [README](https://github.com/${GITHUB_REPOSITORY}#download-and-install).
+          EOF
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest dist/IconIsland-*-Setup.exe dist/IconIsland-*-Setup.exe.sha256 \
+          gh release create latest "$INSTALLER" "$INSTALLER.sha256" \
             --title "Icon Island (latest build)" \
-            --notes "Automatische build van commit ${GITHUB_SHA::7}. Download het Setup.exe-bestand hieronder. De installer is niet ondertekend: Windows SmartScreen kan een waarschuwing tonen (Meer info > Toch uitvoeren)."
+            --notes-file release-notes.md
