@@ -38,11 +38,11 @@ $WebView2Bootstrapper = [IO.Path]::GetFullPath($WebView2Bootstrapper)
 $sources = @('.gitattributes', '.gitignore', 'AGENTS.md', 'LICENSE', 'NOTICE', 'README.md', 'THIRD_PARTY_NOTICES.md', 'TRADEMARKS.md',
     'host\DesktopHost.cs', 'host\IconIsland.ico', 'host\README.md', 'host\app.manifest', 'host\build.ps1', 'host\inspect.ps1',
     'tools\build-installer.ps1', 'tools\installer.nsi', 'tools\version.json')
-$themeFiles = @('flat.html', 'meadow.html', 'settings.html', 'thumbs-data.js', 'logo.svg', 'share.js', 'serve.mjs', 'themes.json', 'beach-palms.js', 'meadow-boy.js', 'meadow-cat.js', 'kit.js', 'kit.css',
+$themeFiles = @('flat.html', 'meadow.html', 'settings.html', 'thumbs-data.js', 'logo.svg', 'share.js', 'serve.mjs', 'themes.json', 'beach-palms.js', 'meadow-kids.js', 'meadow-ground.js', 'meadow-cat.js', 'kit.js', 'kit.css',
     'aurora.html', 'aurora.js', 'sky.html', 'sky.js', 'pasture.html', 'pasture.js', 'animals.js', 'zones.js', 'winter.html', 'winter.js', 'zen.html', 'zen.js', 'forest.html', 'forest.js', 'lotus.html', 'lotus.js',
     'i18n\en.json', 'thumbs\beach.webp', 'thumbs\meadow.webp',
     'assets\beach-coconut-palm-v2.png', 'assets\beach-coconut-palm-curved.png', 'assets\beach-coconut-palm-airy.png', 'assets\beach-coconut-palm-windswept.png', 'assets\beach-coconut-palm-arch.png',
-    'assets\meadow-black-kitten.png', 'assets\meadow-kite-boy-level-face.png', 'assets\meadow-kite-boy-diagonal-run.png')
+    'assets\meadow-black-kitten.png')
 $themes = (Get-Content -LiteralPath (Join-Path $root 'prototype\themes.json') -Raw -Encoding UTF8 | ConvertFrom-Json).themes
 $ready = @($themes | Where-Object { $_.status -eq 'ready' -and $_.product -eq 'free' })
 if ($themes.Count -ne 9 -or $ready.Count -ne 9) { throw 'Expected nine free, ready themes' }

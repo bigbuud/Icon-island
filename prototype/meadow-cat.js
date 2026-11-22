@@ -4,28 +4,13 @@ function meadowCatSegmentDistance(p,a,b) {
   const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));
   return Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t);
 }
-function meadowCatRunLanes(state,width,height,taskbar) {
-  const scale=Math.max(.24,Math.min(1.25,width/1379,(height-taskbar)/1141))*.21;
-  const lanes=[];
-  const add=(a,b)=>{lanes.push([{...a},{...b}]);return b;};
-  const finish=from=>{
-    for(let i=0;i<64;i++){
-      const to=meadowBoyRunDestination(from,scale,width,height,taskbar);
-      add(from,to);from=to;if(to.exit)break;
-    }
-  };
-  const current=state.routeTarget?add(state.position,state.routeTarget):state.position;
-  finish(current);
-  const bottom={x:Math.max(96*scale+12,Math.min(width*.70,width-612*scale-12)),y:height+116*scale+24};
-  const y=(height-taskbar)*.70;
-  const entry={x:Math.max(96*scale+12,bottom.x-(bottom.y-y)*.65),y};
-  add(bottom,entry);finish(entry);
-  return {lanes,scale};
+function meadowCatRectDistance(p,r) {
+  const dx=Math.max(r.x0-p.x,0,p.x-r.x1),dy=Math.max(r.y0-p.y,0,p.y-r.y1);
+  return Math.hypot(dx,dy);
 }
 function meadowCatChoosePlace(state,width,height,taskbar,sceneSeed,desktopIcons,cloudSize) {
-  const {lanes,scale}=meadowCatRunLanes(state,width,height,taskbar);
   const size=Math.max(28,Math.min(90,Math.min(width/1379,(height-taskbar)/1141)*78))*.36;
-  const radius=size*.58,pad=radius+12,clearance=radius+96*scale+14;
+  const radius=size*.58,pad=radius+12,clearance=radius+14;
   if(width<=pad*2||height-taskbar<=pad*2)return null;
   let randomState=(sceneSeed|0)^0x71a43d25;
   const random=()=>{
@@ -39,7 +24,7 @@ function meadowCatChoosePlace(state,width,height,taskbar,sceneSeed,desktopIcons,
     const x=i<256?random():((i-256)%9+.5)/9;
     const y=i<256?random():(Math.floor((i-256)/9)+.5)/9;
     const p={x:pad+x*(width-pad*2),y:pad+y*(height-taskbar-pad*2)};
-    const routeDistance=Math.min(...lanes.map(([a,b])=>meadowCatSegmentDistance(p,a,b)));
+    const routeDistance=meadowCatRectDistance(p,state.avoid);
     if(routeDistance<clearance)continue;
     let score=0;
     for(const icon of desktopIcons){
@@ -47,7 +32,7 @@ function meadowCatChoosePlace(state,width,height,taskbar,sceneSeed,desktopIcons,
       const dy=Math.max(icon.y-p.y,0,p.y-icon.y-icon.h);
       score+=Math.max(0,radius+cloudSize+25-Math.hypot(dx,dy));
     }
-    if(score<bestScore){best={...p,size,clearance,routeDistance,lanes};bestScore=score;}
+    if(score<bestScore){best={...p,size,clearance,routeDistance};bestScore=score;}
     if(score===0)break;
   }
   return best;
@@ -89,6 +74,8 @@ function createMeadowCatScene() {
     const next=[layout,seed].join(',');
     if(next!==signature){
       signature=next;place=meadowCatChoosePlace(routeState,W,H,TASKBAR,seed,icons,P.sigma);
+    }else if(place&&meadowCatRectDistance(place,routeState.avoid)<place.clearance){
+      place=meadowCatChoosePlace(routeState,W,H,TASKBAR,seed,icons,P.sigma);   /* the children moved to a new spot on top of the cat */
     }
     if(!place)return null;
     const size=place.size,rect=[place.x-size/2,place.y-size/2,size,size],shadow=[size*.045,size*.06];

@@ -137,6 +137,7 @@
 </aside>
 <div id="nogl">This browser does not support WebGL2, so the prototype cannot run.</div>
 
+<script src="meadow-ground.js"></script>
 <script>
 'use strict';
 
@@ -315,7 +316,7 @@ void main() {
 
 const FS = `#version 300 es
 precision highp float;
-uniform sampler2D uNoise, uFA, uFB;
+uniform sampler2D uNoise, uFA, uFB, uGround;
 uniform vec2 uRes, uGrid;
 uniform float uScale, uSeed, uStep, uMix, uTime, uDebug, uEdge;
 #ifdef MEADOW_ACTOR
@@ -349,7 +350,6 @@ float hash2(vec2 p) {
   return fract((p3.x + p3.y) * p3.z);
 }
 float ss(float a, float b, float x) { float t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-vec4 N(vec2 p, float scale) { return texture(uNoise, p / scale + uSeed * 0.013); }
 float fieldS(sampler2D t, vec2 p) { return texture(t, (p / uStep + 0.5) / uGrid).r; }
 float smin(float a, float b, float k) { float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
 
@@ -368,28 +368,6 @@ float cloudDist(vec2 q, bool front, inout vec4 fc) {
   return d;
 }
 float cloudDist(vec2 q) { vec4 fc = vec4(0.0, -1e9, 0.0, 0.0); return cloudDist(q, false, fc); }
-
-float segD(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0)); }
-
-float grassInk(vec2 p) {
-  const vec2 G = vec2(12.0, 6.0);
-  vec2 c0 = floor(p / G);
-  float ink = 0.0;
-  for (int j = -1; j <= 1; j++) {
-    vec2 c = c0 + vec2(0.0, float(j));
-    vec2 cp = (c + 0.5) * G;
-    float h = hash2(c + 3.1);
-    float dens = 0.75 * ss(0.42, 0.72, N(cp, 900.0).r) * ss(0.35, 0.6, N(cp + 50.0, 380.0).g) + 0.02;
-    if (h > dens) continue;
-    float ang = (N(cp, 1400.0).g - 0.5) * 0.7 + (hash2(c + 7.7) - 0.5) * 0.3;
-    float len = 2.5 + 3.0 * hash2(c + 1.9);
-    vec2 ctr = cp + (vec2(hash2(c + 4.3), hash2(c + 5.9)) - 0.5) * vec2(2.0, 3.0);
-    vec2 dir = vec2(cos(ang), sin(ang)) * len;
-    float d = segD(p, ctr - dir, ctr + dir);
-    ink = max(ink, (1.0 - ss(0.2, 0.9, d)) * (0.35 + 0.45 * hash2(c + 9.1)));
-  }
-  return ink;
-}
 
 #ifdef MEADOW_CAT
 float catTailMask(vec2 uv) {
@@ -410,12 +388,7 @@ vec4 catColor(vec2 uv) {
 void main() {
   vec2 p = vec2(gl_FragCoord.x, uRes.y * uScale - gl_FragCoord.y) / uScale;
 
-  float w1 = N(p, 1900.0).b, w2 = N(p + 311.0, 650.0).g;
-  vec3 col = mix(G_MID, G_LIGHT, ss(0.3, 0.75, w1 * 0.7 + w2 * 0.3));
-  col = mix(col, G_DEEP, ss(0.45, 0.85, N(p + 977.0, 1300.0).r) * 0.4);
-  col *= 1.0 + 0.05 * (0.5 - (p.x + p.y) / (uRes.x + uRes.y));
-  col *= 1.0 + (hash2(floor(p * (0.8 * max(uScale, 1.0)))) - 0.5) * 0.035;
-  col = mix(col, INK, grassInk(p) * 0.75);
+  vec3 col = texelFetch(uGround, ivec2(gl_FragCoord.xy), 0).rgb;
 
 #ifdef MEADOW_ACTOR
   vec2 actorUV=(p-uActorRect.xy)/uActorRect.zw;
@@ -477,6 +450,7 @@ function program(fs) {
   return { p, U };
 }
 const PR = program(FS);
+const GROUND_PR = program(MEADOW_GROUND_FS);
 let actorPR = null,catPR = null,catActorPR = null;
 gl.bindVertexArray(gl.createVertexArray());
 
@@ -520,6 +494,36 @@ function uploadField(i, Fd) {
   gl.bindTexture(gl.TEXTURE_2D, ftex[i]);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, Gw, Gh, gl.RED, gl.HALF_FLOAT, d);
+}
+
+
+/* The grass, flowers and weeds are painted once into a texture (see meadow-ground.js). */
+let groundTex = null, groundFbo = null, groundSig = '';
+function ensureGround() {
+  const sig = [cv.width, cv.height, cv._scale, seed].join(',');
+  if (sig === groundSig && groundTex) return;
+  groundSig = sig;
+  if (!groundTex) { groundTex = gl.createTexture(); groundFbo = gl.createFramebuffer(); }
+  gl.activeTexture(gl.TEXTURE9);
+  gl.bindTexture(gl.TEXTURE_2D, groundTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, cv.width, cv.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, groundFbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, groundTex, 0);
+  gl.viewport(0, 0, cv.width, cv.height);
+  const { p, U } = GROUND_PR;
+  gl.useProgram(p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+  gl.uniform1i(U.uNoise, 0);
+  gl.uniform2f(U.uRes, cv.width / cv._scale, cv.height / cv._scale);
+  gl.uniform1f(U.uScale, cv._scale);
+  gl.uniform1f(U.uSeed, (seed % 997) * 0.37);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, cv.width, cv.height);
 }
 
 const iconRects = () => icons.map(ic => ({ cx: ic.x + ic.w / 2, cy: ic.y + ic.h / 2, hw: ic.w / 2 - 4, hh: ic.h / 2 - 2 }));
@@ -835,11 +839,12 @@ function frame(now) {
 }
 function draw(now) {
   const measure = frameN % 20 === 0, t0 = performance.now();
-  const boy=typeof prepareMeadowBoy==='function'?prepareMeadowBoy(now,P.showBoy===1):null;
+  const boy=typeof prepareMeadowKids==='function'?prepareMeadowKids(now,P.showBoy===1):null;
   const actor=P.showBoy===1?boy:null;
   const cat=P.showCat===1&&typeof prepareMeadowCat==='function'?prepareMeadowCat(boy,now):null;
   if(actor&&!actorPR)actorPR=program(FS.replace('#version 300 es','#version 300 es\n#define MEADOW_ACTOR'));
   uploadCircles((now - T0) / 1000);
+  ensureGround();
   const render=(renderer,withCat)=>{
     const { p, U } = renderer;
     gl.useProgram(p);
@@ -847,7 +852,8 @@ function draw(now) {
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, noiseTex);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, ftex[fromI]);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, ftex[toI]);
-    gl.uniform1i(U.uNoise, 0); gl.uniform1i(U.uFA, 1); gl.uniform1i(U.uFB, 2);
+    gl.activeTexture(gl.TEXTURE9); gl.bindTexture(gl.TEXTURE_2D, groundTex);
+    gl.uniform1i(U.uGround, 9); gl.uniform1i(U.uFA, 1); gl.uniform1i(U.uFB, 2);
     gl.uniform2f(U.uRes, cv.width / cv._scale, cv.height / cv._scale);
     gl.uniform2f(U.uGrid, Gw, Gh);
     gl.uniform1f(U.uScale, cv._scale);
@@ -1040,7 +1046,7 @@ function startHostedMode() {
   host.postMessage('ready');
 }
 </script>
-<script src="meadow-boy.js"></script>
+<script src="meadow-kids.js"></script>
 <script src="meadow-cat.js"></script>
 <script src="share.js"></script>   
 </body>
