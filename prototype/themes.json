@@ -551,23 +551,236 @@
       ]
     },
     {
-      "id": "zen",
+      "id": "race",
       "adaptive": true,
-      "name": "Zen Garden",
-      "desc": "A calm Japanese sand garden from above. The sand is raked in long waves and rings around your icons, which rest on mossy islands with a rim of stones. Cherry, maple and ginkgo trees and stone lanterns stand between them, petals drift by and leaf shadows slide over the sand",
-      "page": "zen.html",
+      "name": "Racetrack",
+      "desc": "A race circuit from above. The track bends around your icons, which sit in grassy infield patches fenced in by tyres, hay bales or barriers. Racing cars, karts and motorcycles lap the circuit, overtake, smoke in the corners and dive into the pits. Nearly everything can be switched on or off",
+      "page": "race.html",
       "status": "ready",
       "product": "free",
-      "thumb": "url(thumbs/zen-open.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#e9e0cb,#a9bf84)",
+      "thumb": "url(thumbs/race.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#5d9a42,#3b3e44)",
       "thumbSource": "custom",
       "groups": [
         {
-          "name": "Garden",
+          "name": "Vehicles",
           "params": [
             {
-              "key": "petals",
-              "label": "Petals",
-              "hint": "How many petals and leaves drift across the garden",
+              "key": "vehicle",
+              "label": "Vehicles",
+              "hint": "Which kind of racers drive on the track",
+              "options": [
+                "Mixed",
+                "Racing cars",
+                "Karts",
+                "Motorcycles"
+              ],
+              "default": 0
+            },
+            {
+              "key": "count",
+              "label": "Number of racers",
+              "hint": "How many vehicles are on the track",
+              "min": 1,
+              "max": 16,
+              "step": 1,
+              "default": 8
+            },
+            {
+              "key": "speed",
+              "label": "Speed",
+              "hint": "How fast everyone drives",
+              "min": 0.4,
+              "max": 1.8,
+              "step": 0.05,
+              "default": 1,
+              "format": "times"
+            },
+            {
+              "key": "size",
+              "label": "Vehicle size",
+              "hint": "Scale of the vehicles",
+              "min": 0.7,
+              "max": 1.6,
+              "step": 0.05,
+              "default": 1.1,
+              "format": "times"
+            },
+            {
+              "key": "overtake",
+              "label": "Overtaking",
+              "hint": "Faster racers pull out and pass slower ones",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "pits",
+              "label": "Pit stops",
+              "hint": "Racers occasionally drive into the pit lane for a stop",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "smoke",
+              "label": "Tyre smoke",
+              "hint": "Smoke from the tyres in hard corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "sparks",
+              "label": "Sparks",
+              "hint": "Sparks from racing cars at full speed",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            }
+          ]
+        },
+        {
+          "name": "Track",
+          "params": [
+            {
+              "key": "width",
+              "label": "Track width",
+              "hint": "How wide the asphalt is",
+              "min": 36,
+              "max": 90,
+              "step": 2,
+              "default": 58,
+              "unit": "px"
+            },
+            {
+              "key": "layout",
+              "label": "Layout",
+              "hint": "The shape of the circuit",
+              "options": [
+                "Flowing",
+                "Twisty",
+                "Oval"
+              ],
+              "default": 0
+            },
+            {
+              "key": "surface",
+              "label": "Asphalt",
+              "hint": "Colour of the asphalt",
+              "options": [
+                "Dark",
+                "Grey",
+                "Black"
+              ],
+              "default": 0
+            },
+            {
+              "key": "kerbs",
+              "label": "Kerbs",
+              "hint": "Red and white kerbs in the corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "racingLine",
+              "label": "Racing line",
+              "hint": "A darker rubbered-in line through the corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "tyreMarks",
+              "label": "Tyre marks",
+              "hint": "Black skid marks before the corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "gravel",
+              "label": "Gravel traps",
+              "hint": "Gravel on the outside of fast corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "startLine",
+              "label": "Start / finish",
+              "hint": "Chequered line and starting grid",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "pitLane",
+              "label": "Pit lane",
+              "hint": "A pit lane with garages next to the main straight",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            }
+          ]
+        },
+        {
+          "name": "Scenery",
+          "params": [
+            {
+              "key": "grandstands",
+              "label": "Grandstand",
+              "hint": "A grandstand full of spectators",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "tyreBarriers",
+              "label": "Tyre barriers",
+              "hint": "Stacks of tyres at the corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "barriers",
+              "label": "Crash barriers",
+              "hint": "Steel barriers along the straights",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "trees",
+              "label": "Trees",
+              "hint": "How many trees stand on the grass",
               "min": 0,
               "max": 2,
               "step": 0.05,
@@ -575,15 +788,118 @@
               "format": "percent"
             },
             {
+              "key": "billboards",
+              "label": "Billboards",
+              "hint": "Advertising boards along the straights",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "pond",
+              "label": "Pond",
+              "hint": "A small pond in a free spot",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "marshals",
+              "label": "Marshal posts",
+              "hint": "Little marshal huts at the corners",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "stripes",
+              "label": "Mown stripes",
+              "hint": "Light and dark stripes in the grass",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            }
+          ]
+        },
+        {
+          "name": "Icons",
+          "params": [
+            {
+              "key": "pad",
+              "label": "Space around icons",
+              "hint": "How much room the infield patch leaves around icons",
+              "min": 20,
+              "max": 80,
+              "step": 2,
+              "default": 40,
+              "unit": "px"
+            },
+            {
+              "key": "backdrop",
+              "label": "Behind icons",
+              "hint": "What the ground behind your icons looks like",
+              "options": [
+                "Mown lawn",
+                "Paving",
+                "Same as the grass"
+              ],
+              "default": 0
+            },
+            {
+              "key": "wall",
+              "label": "Wall around icons",
+              "hint": "What fences each group of icons in",
+              "options": [
+                "None",
+                "Tyre wall",
+                "Hay bales",
+                "Steel barrier"
+              ],
+              "default": 1
+            }
+          ]
+        },
+        {
+          "name": "Atmosphere",
+          "params": [
+            {
               "key": "time",
               "label": "Time of day",
-              "hint": "Morning light, golden hour or a moonlit night with glowing lanterns",
+              "hint": "Daylight, golden hour or a floodlit night race",
               "options": [
-                "Morning",
+                "Day",
                 "Golden hour",
                 "Night"
               ],
               "default": 0
+            },
+            {
+              "key": "clouds",
+              "label": "Cloud shadows",
+              "hint": "Cloud shadows drifting over the circuit",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
+            },
+            {
+              "key": "floodlights",
+              "label": "Floodlights",
+              "hint": "Light towers that glow at night",
+              "options": [
+                "Hide",
+                "Show"
+              ],
+              "default": 1
             }
           ]
         }
