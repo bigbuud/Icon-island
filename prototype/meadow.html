@@ -322,6 +322,8 @@ uniform float uScale, uSeed, uStep, uMix, uTime, uDebug, uEdge;
 #ifdef MEADOW_ACTOR
 uniform sampler2D uActor, uActorShadow;
 uniform vec4 uActorRect;
+uniform sampler2D uAmb, uAmbShadow;
+uniform vec4 uAmbRect[8], uAmbUV[8];
 #endif
 #ifdef MEADOW_CAT
 uniform sampler2D uCat;
@@ -398,6 +400,25 @@ void main() {
   float actorShadow=texture(uActorShadow,actorUV).r*inActor;
   col=mix(col,col*SHADOW,actorShadow*0.85);
   col=mix(col,actor.rgb,actor.a*inActor);
+  for(int i=0;i<8;i++){
+    vec4 r=uAmbRect[i];
+    if(r.z<=0.0)continue;
+    vec2 q=(p-r.xy)/r.zw;
+    if(q.x<0.0||q.y<0.0||q.x>1.0||q.y>1.0)continue;
+    vec4 uv=uAmbUV[i];
+    vec2 t=vec2(uv.x+q.x*uv.z,1.0-(uv.y+q.y*uv.w));
+    col=mix(col,col*SHADOW,textureLod(uAmbShadow,t,0.0).r*0.85);
+  }
+  for(int i=0;i<8;i++){
+    vec4 r=uAmbRect[i];
+    if(r.z<=0.0)continue;
+    vec2 q=(p-r.xy)/r.zw;
+    if(q.x<0.0||q.y<0.0||q.x>1.0||q.y>1.0)continue;
+    vec4 uv=uAmbUV[i];
+    vec2 t=vec2(uv.x+q.x*uv.z,1.0-(uv.y+q.y*uv.w));
+    vec4 am=textureLod(uAmb,t,0.0);
+    col=mix(col,am.rgb,am.a);
+  }
 #endif
 
 #ifdef MEADOW_CAT
@@ -841,6 +862,7 @@ function draw(now) {
   const measure = frameN % 20 === 0, t0 = performance.now();
   const boy=typeof prepareMeadowKids==='function'?prepareMeadowKids(now,P.showBoy===1):null;
   const actor=P.showBoy===1?boy:null;
+  const amb=P.showBoy===1&&typeof prepareMeadowAmbient==='function'?prepareMeadowAmbient(now,true):null;
   const cat=P.showCat===1&&typeof prepareMeadowCat==='function'?prepareMeadowCat(boy,now):null;
   if(actor&&!actorPR)actorPR=program(FS.replace('#version 300 es','#version 300 es\n#define MEADOW_ACTOR'));
   uploadCircles((now - T0) / 1000);
@@ -869,6 +891,12 @@ function draw(now) {
       gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,actor.actor);gl.uniform1i(U.uActor,5);
       gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,actor.shadow);gl.uniform1i(U.uActorShadow,6);
       gl.uniform4f(U.uActorRect,...actor.rect);
+      if(amb){
+        gl.activeTexture(gl.TEXTURE10);gl.bindTexture(gl.TEXTURE_2D,amb.atlas);gl.uniform1i(U.uAmb,10);
+        gl.activeTexture(gl.TEXTURE11);gl.bindTexture(gl.TEXTURE_2D,amb.shadow);gl.uniform1i(U.uAmbShadow,11);
+      }
+      gl.uniform4fv(U.uAmbRect,amb?amb.rects:new Float32Array(32));
+      gl.uniform4fv(U.uAmbUV,amb?amb.uvs:new Float32Array(32));
     }
     if(withCat){
       gl.activeTexture(gl.TEXTURE8);gl.bindTexture(gl.TEXTURE_2D,cat.texture);gl.uniform1i(U.uCat,8);
@@ -1047,6 +1075,7 @@ function startHostedMode() {
 }
 </script>
 <script src="meadow-kids.js"></script>
+<script src="meadow-ambient.js"></script>
 <script src="meadow-cat.js"></script>
 <script src="share.js"></script>   
 </body>

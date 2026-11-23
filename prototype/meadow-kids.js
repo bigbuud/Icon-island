@@ -85,7 +85,7 @@ function mkFaceSide(ctx, P, up, open) {
 }
 
 function mkHeadFront(ctx, P, k, back, up) {
-  const girl = k.kind === 'girl';
+  const girl = !!P.dress;
   if (girl) {
     for (const sx of [-1, 1]) {
       mkEllipse(ctx, 22.5 * sx, -59, 6.6, 12, 0.28 * sx, P.hair, 1.7);
@@ -101,7 +101,7 @@ function mkHeadFront(ctx, P, k, back, up) {
       ctx.beginPath(); ctx.moveTo(-9, -88); ctx.quadraticCurveTo(-3, -79, -10, -68); ctx.moveTo(7, -91); ctx.quadraticCurveTo(13, -82, 8, -70); ctx.stroke();
       if (girl) { ctx.beginPath(); ctx.moveTo(0, -92); ctx.lineTo(0, -80); ctx.stroke(); }
     }
-    if (girl) for (const sx of [-1, 1]) mkBow(ctx, P, 18.5 * sx, -70, sx);
+    if (girl && P.bow) for (const sx of [-1, 1]) mkBow(ctx, P, 18.5 * sx, -70, sx);
     return;
   }
   /* hair cap + fringe */
@@ -110,7 +110,7 @@ function mkHeadFront(ctx, P, k, back, up) {
   else { ctx.lineTo(19.5, -73); ctx.lineTo(13, -66); ctx.lineTo(7.5, -73.5); ctx.lineTo(1.5, -66.5); ctx.lineTo(-5, -74); ctx.lineTo(-11.5, -66); ctx.lineTo(-19.5, -72); }
   ctx.closePath(); mkFill(ctx, P.hair, 1.7);
   if (!girl) { ctx.beginPath(); ctx.moveTo(-3, -92); ctx.quadraticCurveTo(0, -102, 6, -98); ctx.quadraticCurveTo(3, -95, 4, -91); ctx.closePath(); mkFill(ctx, P.hair, 1.5); }
-  if (girl) for (const sx of [-1, 1]) mkBow(ctx, P, 18 * sx, -71, sx);
+  if (girl && P.bow) for (const sx of [-1, 1]) mkBow(ctx, P, 18 * sx, -71, sx);
   mkFaceFront(ctx, P, up, k.open);
 }
 function mkBow(ctx, P, x, y, sx) {
@@ -126,7 +126,7 @@ function mkRound(ctx, x, y, w, h, r, col, lw = 1.7) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); mkFill(ctx, col, lw);
 }
 function mkHeadSide(ctx, P, k, up) {
-  const girl = k.kind === 'girl';
+  const girl = !!P.dress;
   if (girl) mkEllipse(ctx, -14.5, -61, 6.8, 12.4, 0.32, P.hair, 1.7);
   mkRect(ctx, -3, -57, 9, 8, P.skinD);
   mkCircle(ctx, 1, -73, 19.4, P.skin);
@@ -137,7 +137,7 @@ function mkHeadSide(ctx, P, k, up) {
   ctx.moveTo(-18, -60); ctx.bezierCurveTo(-23, -84, -6, -97, 8, -94); ctx.bezierCurveTo(16, -92.5, 21, -85, 21, -78);
   ctx.lineTo(15.5, -81); ctx.lineTo(12.5, -74.5); ctx.lineTo(6.5, -80); ctx.lineTo(1, -72); ctx.lineTo(-2.5, -76.5);
   ctx.lineTo(-8, -66); ctx.lineTo(-11, -58); ctx.closePath(); mkFill(ctx, P.hair, 1.7);
-  if (girl) mkBow(ctx, P, -14, -69, -1);
+  if (girl) { if (P.bow) mkBow(ctx, P, -14, -69, -1); }
   else { ctx.beginPath(); ctx.moveTo(-1, -94); ctx.quadraticCurveTo(3, -103, 9, -99); ctx.quadraticCurveTo(5, -96, 6, -92); ctx.closePath(); mkFill(ctx, P.hair, 1.5); }
   mkCircle(ctx, -4.2, -71, 4.2, P.skin, 1.6);
   mkFaceSide(ctx, P, up, k.open);
@@ -145,9 +145,9 @@ function mkHeadSide(ctx, P, k, up) {
 
 /* One child. ctx is translated to the feet (units); k holds the pose. */
 function mkDrawKid(ctx, k) {
-  const P = k.kind === 'girl' ? MK_GIRL : MK_BOY, girl = k.kind === 'girl';
+  const P = k.pal || (k.kind === 'girl' ? MK_GIRL : MK_BOY), girl = !!P.dress;
   const g = k.gait, ph = k.phase, run = Math.min(1, g * 1.2);
-  const crouch = k.crouch * 11;
+  const crouch = k.crouch * 11, LS = k.legS || 1, lift0 = 25 * (LS - 1);
   const bob = -Math.abs(Math.sin(ph)) * 3.4 * g + Math.sin(k.idle) * 0.6 + crouch;
   const spoolSide = k.spool ? (k.spool.x >= 0 ? 1 : -1) : 0;
   ctx.save(); ctx.scale(k.size, k.size);
@@ -156,25 +156,25 @@ function mkDrawKid(ctx, k) {
     : kick < 0.62 ? -0.95 + 2.3 * (kick - 0.45) / 0.17 : 1.35 * (1 - (kick - 0.62) / 0.38) ;
   if (k.view === 'side') {
     ctx.scale(k.dir, 1);
-    const hipX = 0, hipY = -25 + (crouch ? crouch * 0.55 : 0) + bob * 0.5;
-    const A = 6 + 11 * run, H = 3 + 10 * run;
+    const hipX = 0, hipY = -25 * LS + (crouch ? crouch * 0.55 : 0) + bob * 0.5;
+    const A = (6 + 11 * run) * LS, H = (3 + 10 * run) * LS;
     const leg = (off, isKick) => {
       let fx, fy;
-      if (isKick && kick >= 0) { fx = hipX + Math.sin(kickAng) * 24; fy = hipY + Math.cos(kickAng) * 24 - Math.max(0, Math.sin(kickAng)) * 4; }
+      if (isKick && kick >= 0) { fx = hipX + Math.sin(kickAng) * 24; fy = hipY + Math.cos(kickAng) * 24 * LS - Math.max(0, Math.sin(kickAng)) * 4; }
       else { const s = ph + off; fx = hipX + Math.sin(s) * A * (g > 0.05 ? 1 : 0.2) - 1; fy = -H * Math.max(0, Math.cos(s)) * (g > 0.05 ? 1 : 0); }
-      return mkKnee(hipX, hipY, fx, fy, 12.6, 12.6, 1, 0.1);
+      return mkKnee(hipX, hipY, fx, fy, 12.6 * LS, 12.6 * LS, 1, 0.1);
     };
     const near = leg(0, true), far = leg(Math.PI, false);
     const drawLeg = (L, shade) => {
       const skin = shade ? P.skinD : P.skin;
-      mkLimb(ctx, [[hipX, hipY], [L.x, L.y], [L.fx, L.fy - 4]], 7.4, skin);
-      mkLimb(ctx, [[L.fx - (L.fx - L.x) * 0.0, L.fy - 8.5], [L.fx, L.fy - 4]], 7.4, P.sock);
+      mkLimb(ctx, [[hipX, hipY], [L.x, L.y], [L.fx, L.fy - 4]], 7.4, P.pants ? (shade ? P.pantsD : P.pants) : skin);
+      if (!P.pants) mkLimb(ctx, [[L.fx, L.fy - 8.5], [L.fx, L.fy - 4]], 7.4, P.sock);
       mkShoe(ctx, P, L.fx, L.fy, 1, 0);
     };
     drawLeg(far, true);
     /* far arm behind the body */
     const lean = 0.05 + 0.16 * run;
-    ctx.save(); ctx.translate(0, hipY); ctx.rotate(lean); ctx.translate(0, -hipY);
+    ctx.save(); ctx.translate(0, hipY); ctx.rotate(lean); ctx.translate(0, -hipY); ctx.translate(0, -lift0);
     const sh = [0.5, -47 + bob * 0.5];
     const armTo = (ang, len = 21) => [sh[0] + Math.sin(ang) * len, sh[1] + Math.cos(ang) * len];
     const swing = Math.sin(ph) * 0.95 * run;
@@ -186,7 +186,7 @@ function mkDrawKid(ctx, k) {
       ctx.closePath(); mkFill(ctx, P.trim, 1.5);
     } else {
       mkRound(ctx, -10, -52 + bob * 0.5, 20, 28, 6, P.top);
-      if (!mkShadow) { ctx.fillStyle = P.stripe; ctx.fillRect(-9.2, -41 + bob * 0.5, 18.4, 4); }
+      if (!mkShadow && P.stripe) { ctx.fillStyle = P.stripe; ctx.fillRect(-9.2, -41 + bob * 0.5, 18.4, 4); }
       mkRound(ctx, -10.6, -27, 21, 11, 3.5, P.bottom, 1.7);
     }
     const nearArm = k.spool && spoolSide ? null : armTo(swing * 0.9 + 0.1);
@@ -196,16 +196,18 @@ function mkDrawKid(ctx, k) {
       mkArm(ctx, P, sh, hand, false, 1);
       mkSpool(ctx, hand[0], hand[1] - 3, Math.atan2(sx, -sy) * 0.4);
       mkCircle(ctx, hand[0], hand[1], 3.6, P.skin, 1.5);
+    } else if (k.hold) {
+      mkArm(ctx, P, sh, [sh[0] + k.hold.x * 21, sh[1] + k.hold.y * 21], false, 1);
     } else mkArm(ctx, P, sh, nearArm, false, 1);
     /* head */
-    ctx.save(); ctx.translate(1, -52); ctx.rotate(-0.16 * k.lookUp - lean * 0.6); ctx.translate(-1, 52);
+    ctx.save(); ctx.translate(1, -52); ctx.rotate(-0.16 * k.lookUp - lean * 0.6); ctx.scale(k.headS || 1, k.headS || 1); ctx.translate(-1, 52);
     mkHeadSide(ctx, P, k, k.lookUp);
     ctx.restore();
     ctx.restore();
     drawLeg(near, false);
   } else {
     const back = k.view === 'back', fy = back ? -1 : 1;
-    const hipY = -25 + crouch * 0.55 + bob * 0.5, hx = 7;
+    const hipY = -25 * LS + crouch * 0.55 + bob * 0.5, hx = 7;
     const legs = [];
     for (const sx of [-1, 1]) {
       const s = ph + (sx > 0 ? 0 : Math.PI);
@@ -213,14 +215,15 @@ function mkDrawKid(ctx, k) {
       let lift = Math.max(0, Math.cos(s)) * 9 * run;
       if (kick >= 0 && sx > 0) { fyp = fy * (kickAng * 9); lift = Math.max(0, kickAng) * 8; fxp = 10; }
       const fp = [fxp, fyp - lift];
-      legs.push({ sx, hip: [sx * hx, hipY], foot: fp, kn: mkKnee(sx * hx, hipY, fp[0], fp[1], 12.4, 12.4, sx * 0.3, fy) });
+      legs.push({ sx, hip: [sx * hx, hipY], foot: fp, kn: mkKnee(sx * hx, hipY, fp[0], fp[1], 12.4 * LS, 12.4 * LS, sx * 0.3, fy) });
     }
     legs.sort((a, b) => a.foot[1] - b.foot[1]);
     for (const L of legs) {
-      mkLimb(ctx, [L.hip, [L.kn.x, L.kn.y], [L.foot[0], L.foot[1] - 4]], 7.6, P.skin);
-      mkLimb(ctx, [[L.foot[0], L.foot[1] - 9.5], [L.foot[0], L.foot[1] - 4]], 7.6, P.sock);
+      mkLimb(ctx, [L.hip, [L.kn.x, L.kn.y], [L.foot[0], L.foot[1] - 4]], 7.6, P.pants || P.skin);
+      if (!P.pants) mkLimb(ctx, [[L.foot[0], L.foot[1] - 9.5], [L.foot[0], L.foot[1] - 4]], 7.6, P.sock);
       mkEllipse(ctx, L.foot[0] + L.sx * 0.8, L.foot[1] - 3, 6.2, 4.7, 0, P.shoe, 1.6);
     }
+    ctx.save(); ctx.translate(0, -lift0);
     const swing = Math.sin(ph) * 0.5 * run;
     const shy = -47 + bob * 0.5;
     const armsDown = (sx) => [sx * (17.6 + 1.2 * run), shy + 20 - Math.abs(Math.cos(ph + (sx > 0 ? 0 : Math.PI))) * 0 + (sx > 0 ? swing : -swing) * 9 * fy];
@@ -243,14 +246,15 @@ function mkDrawKid(ctx, k) {
       ctx.closePath(); mkFill(ctx, P.trim, 1.5);
     } else {
       mkRound(ctx, -14.5, -52 + bob * 0.5, 29, 28, 7, P.top);
-      if (!mkShadow) { ctx.fillStyle = P.stripe; ctx.fillRect(-13.6, -41.5 + bob * 0.5, 27.2, 4.2); }
+      if (!mkShadow && P.stripe) { ctx.fillStyle = P.stripe; ctx.fillRect(-13.6, -41.5 + bob * 0.5, 27.2, 4.2); }
       mkRound(ctx, -14.2, -27, 28.4, 12, 4, P.bottom, 1.7);
       if (!mkShadow) { ctx.strokeStyle = P.bottomD; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(0, -18); ctx.stroke(); }
     }
     if (!back) { doArm(-1); doArm(1); }
-    ctx.save(); ctx.translate(0, -52); ctx.rotate(0.03 * Math.sin(ph) * run); ctx.translate(0, 52);
+    ctx.save(); ctx.translate(0, -52); ctx.rotate(0.03 * Math.sin(ph) * run); ctx.scale(k.headS || 1, k.headS || 1); ctx.translate(0, 52);
     ctx.translate(0, crouch * 0.4 + bob * 0.3);
     mkHeadFront(ctx, P, k, back, k.lookUp);
+    ctx.restore();
     ctx.restore();
   }
   ctx.restore();
@@ -260,7 +264,7 @@ function mkArm(ctx, P, s, h, far, a) {
   mkLimb(ctx, [s, h], 6.6, k);
   /* sleeve */
   const dx = h[0] - s[0], dy = h[1] - s[1], d = Math.hypot(dx, dy) || 1;
-  if (P === MK_BOY) mkLimb(ctx, [s, [s[0] + dx / d * 8.5, s[1] + dy / d * 8.5]], 8.4, far ? P.topD : P.top);
+  if (!P.dress) mkLimb(ctx, [s, [s[0] + dx / d * 8.5, s[1] + dy / d * 8.5]], 8.4, far ? P.topD : P.top);
   else mkLimb(ctx, [s, [s[0] + dx / d * 6.5, s[1] + dy / d * 6.5]], 8.4, far ? P.dressD : P.dress);
   mkCircle(ctx, h[0], h[1], 3.4, k, 1.5);
 }
@@ -351,8 +355,9 @@ function mkStepKid(k, dt, area) {
   k.x += k.vx * dt; k.y += k.vy * dt;
   if (area) { k.x = mkClamp(k.x, area.x - MK_HW - 40, area.x + MK_HW + 40); k.y = mkClamp(k.y, area.y - MK_HH - 30, area.y + MK_HH + 30); }
   const sp = Math.hypot(k.vx, k.vy); k.speed = sp;
-  k.gait += ((sp > 16 ? mkClamp(sp / 290, 0.28, 1.1) : 0) - k.gait) * (1 - Math.exp(-dt * 9));
-  k.phase += sp * dt / 105 * 6.2832;
+  const spn = sp / k.size;
+  k.gait += ((spn > 16 ? mkClamp(spn / 290, 0.28, 1.1) : 0) - k.gait) * (1 - Math.exp(-dt * 9));
+  k.phase += spn * dt / 105 * 6.2832;
   k.idle += dt * 1.7;
   if (k.pop >= 0) { k.pop += dt; if (k.pop > 0.9) k.pop = -1; }
   if (k.kick >= 0) { k.kick += dt / (k.kickLen || 0.5); if (k.kick >= 1) k.kick = -1; }

@@ -22,7 +22,7 @@ Icon Island is a free fork of [Deskland Preview](https://github.com/BLEZZ0102/De
 | Theme | Description |
 | --- | --- |
 | Beach | Turquoise waves, kayaks, seabirds and coconut palms. |
-| Meadow | Drifting clouds and shadows, a boy and his little sister flying kites, kicking a ball and playing tag on flower-dotted grass, plus a little black cat. |
+| Meadow | Drifting clouds and shadows, a boy and his little sister flying kites, kicking a ball and playing tag on flower-dotted grass, plus more children playing, walkers with dogs on a leash, a few rabbits and a little black cat. |
 | Aurora | Northern lights over a snowy ridge; icons become glowing lights joined by constellation lines. |
 | Sky | Cartoon clouds that icons sit on; day, dusk or night. |
 | Pasture | Patchwork fields; every group of icons gets its own fenced meadow with grazing cows and horses. |

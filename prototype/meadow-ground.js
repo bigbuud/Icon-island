@@ -141,12 +141,12 @@ vec3 flowers(vec3 col, vec2 p) {
   for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
     vec2 c = c0 + vec2(float(i), float(j));
     vec2 cp = (c + 0.5) * G;
-    float pf = 0.05 + 0.42 * ss(0.52, 0.72, N(cp + 400.0, 640.0).r);
+    float pf = 0.015 + 0.15 * ss(0.56, 0.76, N(cp + 400.0, 640.0).r);
     if (hash2(c + 71.9) > pf) continue;
     vec2 ctr = cp + (hash22(c + 4.4) - 0.5) * G * 0.4;
     if (length(p - ctr) > 46.0) continue;
     float species = hash2(c + 13.7);
-    float count = 2.0 + floor(hash2(c + 1.3) * 5.0);
+    float count = 1.0 + floor(hash2(c + 1.3) * 3.0);
     for (int m = 0; m < 6; m++) {
       if (float(m) >= count) break;
       vec2 h2 = hash22(c * 1.7 + float(m) * 3.31);
@@ -175,7 +175,7 @@ vec3 weeds(vec3 col, vec2 p) {
   for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
     vec2 c = c0 + vec2(float(i), float(j));
     vec2 cp = (c + 0.5) * G;
-    float dens = 0.2 + 0.4 * ss(0.5, 0.72, N(cp + 120.0, 800.0).g);
+    float dens = 0.1 + 0.3 * ss(0.5, 0.72, N(cp + 120.0, 800.0).g);
     if (hash2(c + 11.3) > dens) continue;
     vec2 ctr = cp + (hash22(c + 5.5) - 0.5) * G * 0.7;
     vec2 q = p - ctr;
