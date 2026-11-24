@@ -7,7 +7,7 @@
 IconIsland.theme({
   params: {
     vehicle: 0, count: 8, speed: 1, size: 1.1, overtake: 1, pits: 1, smoke: 1, sparks: 1,
-    width: 58, layout: 1, surface: 0, kerbs: 1, racingLine: 1, tyreMarks: 1, gravel: 1, startLine: 1, pitLane: 1,
+    width: 58, layout: 1, fit: 1, surface: 0, kerbs: 1, racingLine: 1, tyreMarks: 1, gravel: 1, startLine: 1, pitLane: 1,
     grandstands: 1, tyreBarriers: 1, barriers: 1, trees: 1, billboards: 1, pond: 1, marshals: 1, stripes: 1,
     pad: 40, backdrop: 0, wall: 1,
     time: 0, clouds: 1, floodlights: 1
@@ -39,12 +39,24 @@ IconIsland.theme({
     const list = this._targets(env); this._bsig = this._sigOf(list); this._Z.update(list);
     this._geom(env); this._paint(env, env.cv.width, env.cv.height); this._fleet(env); this._bkey = this._pkey(env);
   },
-  _pkey(env) { const P = env.P; return [P.width, P.layout, P.surface, P.kerbs, P.racingLine, P.tyreMarks, P.gravel, P.startLine, P.pitLane, P.grandstands, P.tyreBarriers, P.barriers, P.trees, P.billboards, P.pond, P.marshals, P.stripes, P.pad, P.backdrop, P.wall, P.time, P.floodlights].join(','); },
+  _pkey(env) { const P = env.P; return [P.width, P.layout, P.fit, P.surface, P.kerbs, P.racingLine, P.tyreMarks, P.gravel, P.startLine, P.pitLane, P.grandstands, P.tyreBarriers, P.barriers, P.trees, P.billboards, P.pond, P.marshals, P.stripes, P.pad, P.backdrop, P.wall, P.time, P.floodlights].join(','); },
   iconsChanged(env) { this._chg = this._chg || performance.now() / 1000; },
 
   // ------------------------------------------------------------------ geometry
   _geom(env) {
-    const { W, H, P } = env, r = env.rng(this._seed * 7 + 13), Z = this._Z, R = this._zR, hw = P.width / 2, kb = 8, lay = P.layout | 0;
+    const P = env.P, lay = P.layout | 0, kb = 8; this._Dtsh = null; this._tracks = [];
+    let hw = P.width / 2, lists = null;
+    if (lay === 1) {
+      const pick = this._pickGrid(env, hw, kb);
+      if (pick) { hw = pick.hw; const m = hw + kb + 24; lists = this._gridTracks(env, env.rng(this._seed * 7 + 99), m, env.W - m, m, env.H - TASKBAR - m, pick.c, hw + kb + 16); }
+    }
+    if (lists && lists.length) lists.forEach((pts, idx) => { this._geom1(env, { pts, hw, idx }); this._tracks.push(this._g); });
+    else { this._geom1(env, { hw: P.width / 2, idx: 0 }); this._tracks.push(this._g); }
+    this._g = this._tracks[0];
+  },
+  _geom1(env, ov) {
+    const { W, H, P } = env, r = env.rng(this._seed * 7 + 13 + ov.idx * 101), Z = this._Z, R = this._zR, kb = 8, lay = P.layout | 0;
+    const hw = ov.hw;
     const m = hw + kb + 24, X0 = m, X1 = W - m, Y0 = m, Y1 = H - TASKBAR - m, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, rx = (X1 - X0) / 2, ry = (Y1 - Y0) / 2;
     let N = lay === 1 ? 72 : 40, pts = []; const NA = lay === 1 ? 7 : 4, hm = [];
     if (lay === 1) [3, 4, 6, 8, 10, 13].forEach(k => hm.push({ a: 0.1 + 0.05 * r(), k, p: r() * 6.283 }));
@@ -57,7 +69,7 @@ IconIsland.theme({
       pts.push([cx + rx * c * sc * f, cy + ry * s * sc * f]);
     }
     const need = hw + kb + 16, sep = 2 * (hw + kb) + 16;
-    const gp = lay === 1 ? this._gridTrack(env, r, X0, X1, Y0, Y1, 2 * (hw + kb) + 44, need) : null;
+    const gp = ov.pts || null;
     if (gp) { pts = gp; N = pts.length; }
     for (let it = 0; it < (gp ? 0 : 80); it++) {
       for (let i = 0; i < N; i++) {
@@ -128,7 +140,7 @@ IconIsland.theme({
       if (!hot && st >= 0) { if (i - st >= 6) { let pk = st, pv = 0; for (let j = st; j < i; j++) if (Math.abs(ks[j]) > pv) { pv = Math.abs(ks[j]); pk = j; } g.corners.push({ a: st, b: i - 1, sign: Math.sign(ks[pk]), peak: pk, kmax: pv }); } st = -1; }
     }
     // distance-to-track grid
-    const cell = 6, gw = Math.ceil(W / cell) + 2, gh = Math.ceil(H / cell) + 2, Dt = new Float32Array(gw * gh).fill(1e4), rr = hw + kb + 110, rc = Math.ceil(rr / cell);
+    const cell = 6, gw = Math.ceil(W / cell) + 2, gh = Math.ceil(H / cell) + 2, Dt = this._Dtsh || (this._Dtsh = new Float32Array(gw * gh).fill(1e4)), rr = hw + kb + 110, rc = Math.ceil(rr / cell);
     for (let i = 0; i < M; i += 2) {
       const ci = Math.floor(g.x[i] / cell), cj = Math.floor(g.y[i] / cell);
       for (let j = Math.max(0, cj - rc); j <= Math.min(gh - 1, cj + rc); j++) for (let q = Math.max(0, ci - rc); q <= Math.min(gw - 1, ci + rc); q++) {
@@ -139,7 +151,7 @@ IconIsland.theme({
     // start/finish, pit lane, grandstand place (all on the longest straight)
     g.iS = 44 + Math.floor(best / 2); g.pit = null; g.stand = null;
     const okp = (x, y, mg) => x > mg && x < W - mg && y > mg && y < H - TASKBAR - mg && Z.ds(x, y) - R > mg * 0.5;
-    if (best * ds >= 230) {
+    if (best * ds >= 230 && ov.idx === 0) {
       const half = Math.min(best * ds * 0.42, 175), ih = Math.floor(half / ds), ia = g.iS - ih, ib = g.iS + ih;
       const d1 = hw + kb + 20, d2 = d1 + 15, dBld = d2 + 22, dSt = hw + kb + 32;
       const bad = side => { let v = 0; for (let i = ia - 6; i <= ib + 6; i += 3) for (const d of [d2 + 8, dBld + 12]) { const x = g.x[i] + g.nx[i] * d * side, y = g.y[i] + g.ny[i] * d * side; if (!okp(x, y, 6)) v++; } return v; };
@@ -156,9 +168,20 @@ IconIsland.theme({
     g.pitLat = i => { const p = g.pit; if (!p) return 0; const a = p.ia - p.ramp, b = p.ib + p.ramp; if (i < a || i > b) return 0; const sm = t => t * t * (3 - 2 * t); let t = 1; if (i < p.ia) t = sm((i - a) / p.ramp); else if (i > p.ib) t = sm((b - i) / p.ramp); return p.side * p.d1 * t; };
     this._L0 = this._L0 || L;
   },
+  // With "Fit to all screens" the track may get a little narrower and the lanes closer together, whichever setup lets the circuit
+  // reach the most free ground (e.g. a second monitor behind a wall of icons).
+  _pickGrid(env, hw0, kb) {
+    const { W, H, P } = env, fit = P.fit ? [1, 0.88, 0.76, 0.66] : [1], gaps = P.fit ? [44, 26, 12] : [44]; let best = null;
+    for (const f of fit) for (const gap of gaps) {
+      const hw = hw0 * f, m = hw + kb + 24, c = 2 * (hw + kb) + gap, need = hw + kb + 16, a = this._gridTracks(env, null, m, W - m, m, H - TASKBAR - m, c, need, true);
+      if (a === null) continue; const score = a * (0.35 + 0.65 * f) * (0.85 + 0.15 * gap / 44);
+      if (!best || score > best.score * 1.04) best = { hw, c, need, score };
+    }
+    return best;
+  },
   // Karting-style circuit: a random spanning tree over coarse blocks of free ground; the lap runs around the outline of that tree
   // (a Hamiltonian cycle over the fine cells), which gives hairpins, chicanes and switchbacks that fill the free screen area.
-  _gridTrack(env, r, X0, X1, Y0, Y1, c, need) {
+  _gridTracks(env, r, X0, X1, Y0, Y1, c, need, dry) {
     const Z = this._Z, R = this._zR;
     let nx = Math.floor((X1 - X0) / c) + 1, ny = Math.floor((Y1 - Y0) / c) + 1; nx -= nx % 2; ny -= ny % 2;
     if (nx < 4 || ny < 2) return null;
@@ -171,13 +194,16 @@ IconIsland.theme({
       ok[j * bx + i] = good;
     }
     // largest connected component
-    const comp = new Array(bx * by).fill(-1); let best = [], cid = 0;
+    const comp = new Array(bx * by).fill(-1); const all = []; let cid = 0;
     for (let k = 0; k < bx * by; k++) {
       if (!ok[k] || comp[k] >= 0) continue; const q = [k], list = []; comp[k] = cid;
       while (q.length) { const a = q.pop(); list.push(a); const ai = a % bx, aj = (a / bx) | 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i = ai + di, j = aj + dj; if (i < 0 || j < 0 || i >= bx || j >= by) continue; const b = j * bx + i; if (ok[b] && comp[b] < 0) { comp[b] = cid; q.push(b); } } }
-      if (list.length > best.length) best = list; cid++;
+      all.push(list); cid++;
     }
-    if (best.length < 4) return null;
+    all.sort((a, b) => b.length - a.length); if (!all.length || all[0].length < 4) return null;
+    const use = all.filter((l, i) => i < 4 && l.length >= (i ? 5 : 4));
+    if (dry) return use.reduce((a, l) => a + l.length, 0) * sx * sy * 4;
+    const cycle = best => {
     // randomised Prim spanning tree
     const inT = new Set([best[Math.floor(r() * best.length)]]), edges = [], front = [], addF = a => { const ai = a % bx, aj = (a / bx) | 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i = ai + di, j = aj + dj; if (i < 0 || j < 0 || i >= bx || j >= by) continue; const b = j * bx + i; if (ok[b] && comp[b] === comp[a]) front.push([a, b]); } };
     addF([...inT][0]);
@@ -195,6 +221,9 @@ IconIsland.theme({
     if (cyc.length !== best.length * 4) return null;
     const jit = Math.min(sx, sy) * 0.07;
     return cyc.map(k => [px(k % nx) + (r() - 0.5) * jit, py((k / nx) | 0) + (r() - 0.5) * jit]);
+    };
+    const out = []; for (const l of use) { const t = cycle(l); if (t) out.push(t); }
+    return out.length ? out : null;
   },
   _td(x, y) { const g = this._g, i = Math.floor(x / g.cell), j = Math.floor(y / g.cell); return i < 0 || j < 0 || i >= g.gw || j >= g.gh ? 1e4 : g.Dt[j * g.gw + i]; },
   _ok(env, x, y, m, d) { return x > m && x < env.W - m && y > m && y < env.H - TASKBAR - m && this._Z.ds(x, y) - this._zR > m * 0.6 && this._td(x, y) > d - 4; },
@@ -275,6 +304,8 @@ IconIsland.theme({
       else { t.fillStyle = '#b6b4ab'; t.fillRect(0, 0, W, H); t.strokeStyle = 'rgba(60,56,48,0.22)'; t.lineWidth = 1; for (let x = 0; x < W; x += 26) { t.beginPath(); t.moveTo(x, 0); t.lineTo(x, H); t.stroke(); } for (let y = 0; y < H; y += 26) { t.beginPath(); t.moveTo(0, y); t.lineTo(W, y); t.stroke(); } t.fillStyle = t.createPattern(this._grain, 'repeat'); t.fillRect(0, 0, W, H); }
       Z.paint(c, this._tex, this._tmp, S); c.setTransform(S, 0, 0, S, 0, 0);
     }
+    for (const tr of this._tracks) {
+    this._g = tr; const g = tr, M = tr.M, hw = tr.hw;
     // gravel traps on the outside of fast corners
     const ex = (x, y, mg) => this._ok(env, x, y, mg, 0);
     if (P.gravel) for (const cr of g.corners) {
@@ -360,6 +391,8 @@ IconIsland.theme({
       const od = -cr.sign, d = hw + kb + (cr.gravel ? 36 : 17), i = cr.peak, x = g.x[i] + g.nx[i] * od * d, y = g.y[i] + g.ny[i] * od * d; if (!this._ok(env, x, y, 12, d - 3)) continue;
       c.fillStyle = 'rgba(0,0,0,0.28)'; c.fillRect(x - 4 + this._sh[0], y - 4 + this._sh[1], 8, 8); c.fillStyle = '#e6e2d4'; c.fillRect(x - 4, y - 4, 8, 8); c.fillStyle = '#c9423a'; c.fillRect(x - 5, y - 5, 10, 3); c.strokeStyle = '#555'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 6, y - 6); c.lineTo(x + 6, y + 3); c.stroke(); c.fillStyle = '#f2c230'; c.beginPath(); c.moveTo(x + 6, y - 6); c.lineTo(x + 13, y - 4); c.lineTo(x + 6, y - 1.5); c.fill();
     }
+    }
+    this._g = this._tracks[0];
     // walls around the icon patches
     const wm = P.wall | 0;
     if (wm) {
@@ -384,32 +417,36 @@ IconIsland.theme({
     const tint = ['', 'rgba(255,150,50,0.14)', 'rgba(8,16,56,0.56)'][tm]; if (tint) { c.fillStyle = tint; c.fillRect(0, 0, W, H); }
     if (tm === 2 && P.floodlights) {
       c.globalCompositeOperation = 'lighter'; const towers = [];
-      for (let i = 10; i < M; i += 36) { const side = (i / 36 | 0) % 2 ? 1 : -1, d = hw + kb + 22, x = g.x[i] + g.nx[i] * side * d, y = g.y[i] + g.ny[i] * side * d; if (!this._ok(env, x, y, 10, d - 3)) continue; towers.push([x, y]); const gd = c.createRadialGradient(g.x[i], g.y[i], 0, g.x[i], g.y[i], 110); gd.addColorStop(0, 'rgba(255,236,180,0.42)'); gd.addColorStop(0.5, 'rgba(255,230,170,0.16)'); gd.addColorStop(1, 'rgba(255,230,170,0)'); c.fillStyle = gd; c.fillRect(g.x[i] - 110, g.y[i] - 110, 220, 220); }
+      for (const tr of this._tracks) for (let i = 10; i < tr.M; i += 36) { const g = tr, hw = tr.hw; const side = (i / 36 | 0) % 2 ? 1 : -1, d = hw + kb + 22, x = g.x[i] + g.nx[i] * side * d, y = g.y[i] + g.ny[i] * side * d; if (!this._ok(env, x, y, 10, d - 3)) continue; towers.push([x, y]); const gd = c.createRadialGradient(g.x[i], g.y[i], 0, g.x[i], g.y[i], 110); gd.addColorStop(0, 'rgba(255,236,180,0.42)'); gd.addColorStop(0.5, 'rgba(255,230,170,0.16)'); gd.addColorStop(1, 'rgba(255,230,170,0)'); c.fillStyle = gd; c.fillRect(g.x[i] - 110, g.y[i] - 110, 220, 220); }
       c.globalCompositeOperation = 'source-over'; for (const t of towers) { c.fillStyle = '#2a2d33'; c.beginPath(); c.arc(t[0], t[1], 2.6, 0, 7); c.fill(); c.fillStyle = '#fff4cc'; c.beginPath(); c.arc(t[0], t[1], 1.4, 0, 7); c.fill(); }
     }
   },
 
   // ------------------------------------------------------------------ vehicles
   _fleet(env) {
-    const { P } = env, g = this._g, key = [P.vehicle, P.count, this._seed, g.M].join(','); if (key === this._fleetKey && this._veh.length) return;
-    const r = env.rng(this._seed * 13 + 5), n = P.count | 0, scale = this._L0 && this._lastL ? g.L / this._lastL : 1; this._lastL = g.L;
-    const old = this._veh; if (this._fleetKey && old.length) for (const v of old) v.s = (v.s * scale) % g.L;
-    const mk = (i) => {
-      const m = P.vehicle | 0, kind = m === 0 ? (r() < 0.45 ? (r() < 0.55 ? 0 : 1) : (r() < 0.5 ? 2 : 3)) : m === 1 ? (r() < 0.55 ? 0 : 1) : m === 2 ? 3 : 2;
-      return { kind, col: this.LIV[(i * 3 + Math.floor(r() * 10)) % 10], col2: this.LIV[Math.floor(r() * 10)], helm: this.LIV[Math.floor(r() * 10)], s: (i / Math.max(1, n)) * g.L + r() * 30, v: 120, lat: (r() - 0.5) * g.hw * 0.7, off: (r() - 0.5) * g.hw * 0.5, base: 0.93 + r() * 0.14, state: 'race', pitCD: 8 + r() * 40, box: -1, stopT: 0, lean: 0, prevV: 120, hx: 0, hy: 0, ang: 0 };
-    };
-    if (!this._fleetKey || !old.length) this._veh = Array.from({ length: n }, (_, i) => mk(i));
-    else { while (this._veh.length > n) this._veh.pop(); while (this._veh.length < n) this._veh.push(mk(this._veh.length)); this._veh.forEach(v => { if (v.state !== 'race') { v.state = 'race'; v.box = -1; } }); const m = P.vehicle | 0; if (m && this._fleetKey.split(',')[0] !== String(m)) this._veh = Array.from({ length: n }, (_, i) => mk(i)); }
+    const { P } = env, T = this._tracks, key = [P.vehicle, P.count, this._seed, T.map(t => t.M).join('.')].join(',');
+    if (key === this._fleetKey && this._veh.length) return;
+    const r = env.rng(this._seed * 13 + 5), n = P.count | 0, tot = T.reduce((a, t) => a + t.L, 0), cnt = T.map(() => 0), tks = [];
+    for (let i = 0; i < n; i++) {
+      let k = 0; if (i < T.length) k = i; else { const x = (i + 0.5) / n * tot; let acc = 0; for (let q = 0; q < T.length; q++) { acc += T[q].L; if (x <= acc) { k = q; break; } } }
+      tks.push(k); cnt[k]++;
+    }
+    const slot = T.map(() => 0);
+    this._veh = tks.map((tk, i) => {
+      const g = T[tk], m = P.vehicle | 0, kind = m === 0 ? (r() < 0.45 ? (r() < 0.55 ? 0 : 1) : (r() < 0.5 ? 2 : 3)) : m === 1 ? (r() < 0.55 ? 0 : 1) : m === 2 ? 3 : 2;
+      return { tk, kind, col: this.LIV[(i * 3 + Math.floor(r() * 10)) % 10], col2: this.LIV[Math.floor(r() * 10)], helm: this.LIV[Math.floor(r() * 10)], s: (slot[tk]++ / cnt[tk]) * g.L + r() * 30, v: 120, lat: (r() - 0.5) * g.hw * 0.7, off: (r() - 0.5) * g.hw * 0.5, base: 0.93 + r() * 0.14, state: 'race', pitCD: 8 + r() * 40, box: -1, stopT: 0, lean: 0, prevV: 120, hx: 0, hy: 0, ang: 0 };
+    });
     this._fleetKey = key; this._boxes = []; this._part = [];
   },
   _at(i) { const g = this._g, M = g.M, k = Math.floor(i), f = i - k, a = ((k % M) + M) % M, b = (a + 1) % M; return [g.x[a] + (g.x[b] - g.x[a]) * f, g.y[a] + (g.y[b] - g.y[a]) * f, g.nx[a] + (g.nx[b] - g.nx[a]) * f, g.ny[a] + (g.ny[b] - g.ny[a]) * f, g.k[a], a]; },
   _step(env, dt) {
-    const { P } = env, g = this._g, V = this._veh, L = g.L, ds = g.ds, M = g.M, pit = g.pit && P.pitLane ? g.pit : null, hw = g.hw;
+    const { P } = env, V = this._veh, T = this._tracks;
     const vmax = 255 * P.speed;
     for (const v of V) {
+      if (v.tk >= T.length) v.tk = 0; const g = this._g = T[v.tk], L = g.L, ds = g.ds, M = g.M, pit = g.pit && P.pitLane ? g.pit : null, hw = g.hw; if (v.s >= L) v.s %= L;
       const idx = (v.s / ds) % M, i0 = Math.floor(idx), kk = g.k[i0];
       let vt = vmax * this.KIND[v.kind].mult * v.base * g.ahead[i0], latT = g.race[i0] * 0.85 + v.off * (1 - Math.abs(g.race[i0]) / hw);
-      let leader = null, lg = 1e9; for (const o of V) { if (o === v) continue; let d = o.s - v.s; if (d < 0) d += L; d -= (this.KIND[o.kind].len + this.KIND[v.kind].len) * P.size * 0.5; if (d < lg) { lg = d; leader = o; } }
+      let leader = null, lg = 1e9; for (const o of V) { if (o === v || o.tk !== v.tk) continue; let d = o.s - v.s; if (d < 0) d += L; d -= (this.KIND[o.kind].len + this.KIND[v.kind].len) * P.size * 0.5; if (d < lg) { lg = d; leader = o; } }
       const inPit = v.state !== 'race';
       if (leader && lg < 58 && lg > -6) {
         const dl = leader.lat - v.lat, lim = inPit ? 9 : hw * 0.55;
@@ -485,7 +522,7 @@ IconIsland.theme({
     else if (!this._chg) { const sig = this._sigOf(this._targets(env)); if (this._bg && sig !== this._bsig) this._chg = t; }
     if (!this._g || !this._bg) { ctx.fillStyle = '#5d9a42'; ctx.fillRect(0, 0, W, H); return; }
     ctx.drawImage(this._bg, 0, 0, W, H);
-    const g = this._g, step = Math.min(dt, 0.05); if (step > 0) this._step(env, step);
+    const step = Math.min(dt, 0.05); if (step > 0) this._step(env, step); const g = this._g = this._tracks[0];
     const V = this._veh, sh = this._sh, size = P.size;
     // shadows
     ctx.fillStyle = 'rgba(0,0,0,0.3)';

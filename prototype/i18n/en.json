@@ -465,6 +465,14 @@
             "Oval"
           ]
         },
+        "fit": {
+          "label": "Fit to all screens",
+          "hint": "Let the track get a little narrower and the lanes closer so the circuit reaches as much of your screens as possible",
+          "options": [
+            "Hide",
+            "Show"
+          ]
+        },
         "surface": {
           "label": "Asphalt",
           "hint": "Colour of the asphalt",
