@@ -169,6 +169,36 @@
               "step": 1,
               "default": 3,
               "unit": ""
+            },
+            {
+              "key": "sharks",
+              "label": "Shark fins",
+              "hint": "An occasional shark fin cruising through the deep water; 0 to hide",
+              "min": 0,
+              "max": 2,
+              "step": 1,
+              "default": 1,
+              "unit": ""
+            },
+            {
+              "key": "dolphins",
+              "label": "Dolphins",
+              "hint": "A pod of dolphins that now and then swims by and leaps; 0 to hide",
+              "min": 0,
+              "max": 6,
+              "step": 1,
+              "default": 3,
+              "unit": ""
+            },
+            {
+              "key": "sailboats",
+              "label": "Sailboats",
+              "hint": "Small sailboats tacking across the open sea; 0 to hide",
+              "min": 0,
+              "max": 2,
+              "step": 1,
+              "default": 1,
+              "unit": ""
             }
           ]
         }

@@ -151,7 +151,7 @@ const PREVIEW = QS.has('preview');
 const P = {
   sigma: 85, warp: 34, shallow: 260, shoal: 110,
   speed: 22, runup: 120, wave: 1.6, spacing: 70, waves: 1, grain: 1, quality: 2,
- kayaks: 2, birds: 3, palms: 4, debug: false, snap: true, cap30: true,
+ kayaks: 2, birds: 3, palms: 4, sharks: 1, dolphins: 3, sailboats: 1, debug: false, snap: true, cap30: true,
 };
 const DEFAULTS = Object.assign({}, P);
 const SLIDERS = [
@@ -162,6 +162,9 @@ const SLIDERS = [
   { key: 'shallow', label: 'Shallow sea width', min: 120, max: 700, step: 1,    fmt: v => v + ' px' },
   { key: 'kayaks',  label: 'Kayaks',   min: 0,   max: 4,   step: 1,    fmt: v => v + ' kayaks',  act: 'kayaks' },
   { key: 'birds',   label: 'Seabirds',     min: 0,   max: 8,   step: 1,    fmt: v => v + ' birds',  act: 'birds' },
+  { key: 'sharks',  label: 'Shark fins',   min: 0,   max: 2,   step: 1,    fmt: v => v + ' sharks', act: 'sea' },
+  { key: 'dolphins', label: 'Dolphins',    min: 0,   max: 6,   step: 1,    fmt: v => v + ' dolphins', act: 'sea' },
+  { key: 'sailboats', label: 'Sailboats',  min: 0,   max: 2,   step: 1,    fmt: v => v + ' boats', act: 'sea' },
 ];
 
 const PAGE = '<path d="M12 4h17l9 9v29a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#fbfbfb" stroke="#c4c4c4"/><path d="M29 4v7a2 2 0 0 0 2 2h7z" fill="#dedede"/>';
@@ -327,6 +330,10 @@ uniform vec4 uKay[4];
 uniform vec4 uRip[6];
 uniform float uBirdN;
 uniform vec4 uBird[8];
+uniform float uShkN, uDolN, uSailN;
+uniform vec4 uShk[2];
+uniform vec4 uDol[6];
+uniform vec4 uSail[2];
 out vec4 o;
 
 const vec3 SEA0 = vec3(0.74, 0.93, 0.87), SEA1 = vec3(0.47, 0.87, 0.84), SEA2 = vec3(0.17, 0.76, 0.81);
@@ -396,6 +403,33 @@ vec3 gullSD(vec2 q, float span) {
   float chord = mix(4.4, 1.3, u);
   float wing = max(max(q.x - lead, lead - chord - q.x), y - reach - 1.0);
   return vec3(min(body, tail), wing, u);
+}
+
+float leafSD(vec2 q, float len, float wd) {
+  float t = clamp(q.x / len, -1.0, 1.0);
+  return max(abs(q.y) - wd * (1.0 - t * t), abs(q.x) - len);
+}
+float wakeV(vec2 q, float len, float spread) {
+  float d = -q.x;
+  if (d < 3.0 || d > len) return 0.0;
+  float e = abs(abs(q.y) - d * spread), f = 1.0 - d / len;
+  return (1.0 - ss(0.4, 1.4, e)) * f * f * ss(3.0, 9.0, d);
+}
+float dolphinSD(vec2 q) {
+  float u = clamp((q.x + 2.0) / 19.0, -1.0, 1.0);
+  float w = max(4.6 * pow(max(1.0 - u * u, 0.0), 0.65), 1.0 * ss(-12.0, -19.0, q.x));
+  float body = max(abs(q.y) - w, abs(q.x + 1.5) - 19.5);
+  float beak = segSD(q, vec2(16.0, 0.0), vec2(23.0, 0.0)) - 1.3;
+  float fluke = min(segSD(q, vec2(-20.0, 0.0), vec2(-25.5, 5.4)), segSD(q, vec2(-20.0, 0.0), vec2(-25.5, -5.4))) - 0.9;
+  float flip = segSD(vec2(q.x, abs(q.y)), vec2(8.0, 3.6), vec2(3.5, 8.4)) - 0.8;
+  return min(min(body, beak), min(fluke, flip));
+}
+float sailSD(vec2 q, vec2 a, vec2 b, float bulge) {
+  vec2 ba = b - a;
+  float tt = clamp(dot(q - a, ba) / dot(ba, ba), 0.0, 1.0);
+  vec2 n = normalize(vec2(-ba.y, ba.x));
+  vec2 c = a + ba * tt + n * bulge * sin(3.14159 * tt);
+  return length(q - c) - (0.8 + 2.3 * sin(3.14159 * tt));
 }
 
 void main() {
@@ -570,6 +604,72 @@ void main() {
     kc = mix(kc, vec3(0.28, 0.24, 0.26), sh);
     kc = mix(kc, vec3(0.90, 0.28, 0.22), bl);
     col = kc;
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (float(i) >= uShkN) break;
+    vec4 sk = uShk[i];
+    vec2 dd = p - sk.xy;
+    if (dot(dd, dd) > 7000.0) continue;
+    vec2 q = rot(-sk.z) * dd;
+    float v = sk.w;
+    float bodySD = (length(q / vec2(30.0, 6.5)) - 1.0) * 6.0;
+    col = mix(col, col * vec3(0.45, 0.62, 0.70), ss(2.5, -2.5, bodySD) * 0.34 * v);
+    col = mix(col, FOAM, wakeV(q - vec2(-1.0, 0.0), 72.0, 0.3) * 0.75 * v);
+    col = mix(col, FOAM, (1.0 - ss(1.0, 3.2, length(q - vec2(9.0, 0.0)) - 1.0)) * 0.35 * v);
+    float fin = leafSD(q - vec2(2.0, 0.0), 8.5, 1.9);
+    col = mix(col, vec3(0.24, 0.29, 0.34), ss(0.6, -0.6, fin) * min(1.0, v * 1.6));
+    float flick = sin(t * 2.6 + sk.x * 0.01);
+    float tl = segSD(q, vec2(-25.0, 0.0), vec2(-31.0, 5.5 * flick)) - 1.1;
+    col = mix(col, vec3(0.28, 0.33, 0.38), ss(0.6, -0.6, tl) * ss(0.55, 0.95, v) * 0.85);
+  }
+
+  for (int i = 0; i < 6; i++) {
+    if (float(i) >= uDolN) break;
+    vec4 d = uDol[i];
+    vec2 dd = p - d.xy;
+    if (dot(dd, dd) > 3200.0) continue;
+    if (d.w < 0.0) {
+      vec2 q = rot(-d.z) * dd;
+      col = mix(col, col * vec3(0.55, 0.72, 0.80), ss(1.4, -1.4, dolphinSD(q)) * (-d.w) * 0.32);
+    } else {
+      float lift = sin(3.14159 * d.w);
+      vec2 qs = rot(-d.z) * (dd - vec2(9.0, 15.0) * lift);
+      col = mix(col, col * vec3(0.50, 0.66, 0.74), ss(1.4, -1.4, dolphinSD(qs)) * 0.5);
+      float sc = 1.0 + 0.24 * lift;
+      vec2 q = rot(-d.z) * dd / sc;
+      float sd = dolphinSD(q) * sc;
+      float ay = abs(q.y);
+      vec3 dc = mix(vec3(0.34, 0.43, 0.52), vec3(0.58, 0.67, 0.74), ss(1.0, 4.6, ay));
+      dc = mix(dc, vec3(0.26, 0.33, 0.41), 1.0 - ss(0.6, 1.4, length((q - vec2(-1.5, 0.0)) / vec2(3.6, 1.0)) - 1.0));
+      dc = mix(dc, vec3(0.78, 0.84, 0.88), 1.0 - ss(0.5, 1.2, length(q - vec2(11.0, 2.4)) - 0.9));
+      col = mix(col, dc, ss(0.6, -0.6, sd));
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (float(i) >= uSailN) break;
+    vec4 sb = uSail[i];
+    vec2 dd = p - sb.xy;
+    if (dot(dd, dd) > 6500.0) continue;
+    vec2 q = rot(-sb.z) * dd;
+    float a = sb.w;
+    vec2 mast = vec2(3.0, 0.0), tail = mast + 23.0 * vec2(-cos(a), sin(a));
+    vec2 f0 = vec2(22.0, 0.0), clew = f0 + 17.0 * vec2(-cos(a * 0.75), sin(a * 0.75));
+    vec2 qs = rot(-sb.z) * (dd - vec2(9.0, 14.0));
+    float shd = min(hullSD(qs / 1.3) * 1.3, min(sailSD(qs, mast, tail, 1.6), sailSD(qs, f0, clew, 1.2)));
+    col = mix(col, col * vec3(0.56, 0.72, 0.80), ss(1.6, -1.6, shd) * 0.55);
+    col = mix(col, FOAM, wakeV(q - vec2(-20.0, 0.0), 60.0, 0.26) * 0.55);
+    float hd = hullSD(q / 1.3) * 1.3;
+    vec3 hc = mix(vec3(0.86, 0.74, 0.56), vec3(0.98, 0.98, 0.96), ss(-2.0, -0.5, hd));
+    hc = mix(hc, vec3(0.50, 0.38, 0.28), 1.0 - ss(0.6, 1.2, length((q - vec2(-9.0, 0.0)) / vec2(6.5, 2.6)) - 1.0));
+    hc = mix(hc, vec3(0.85, 0.25, 0.22), (1.0 - ss(0.5, 1.1, abs(hd + 1.4))) * 0.0);
+    col = mix(col, hc, ss(0.7, -0.7, hd));
+    float jib = sailSD(q, f0, clew, 1.2), mainS = sailSD(q, mast, tail, 1.6);
+    col = mix(col, vec3(0.97, 0.45, 0.36), ss(0.6, -0.6, jib));
+    col = mix(col, vec3(0.97, 0.97, 0.95), ss(0.6, -0.6, mainS));
+    col = mix(col, vec3(0.42, 0.32, 0.24), ss(0.5, -0.5, segSD(q, mast, tail) - 0.3));
+    col = mix(col, vec3(0.30, 0.24, 0.20), ss(0.6, -0.6, length(q - mast) - 1.3));
   }
 
   for (int i = 0; i < 8; i++) {
@@ -766,6 +866,97 @@ function stepKayaks(dt, now) {
   }
 }
 
+/* ---- sea life: an occasional shark fin, a pod of dolphins and a small sailboat (all stay in deep water) ---- */
+const sharks = [], dolphins = [], sails = [];
+const pod = { state: 'away', t: 6, x: 0, y: 0, h: 0, v: 40, life: 0, wander: 0 };
+const wind = { a: Math.random() * Math.PI * 2 };
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+function deepSpot(minS, others, gap) {
+  for (let t = 0; t < 300; t++) {
+    const x = 70 + Math.random() * (W - 140), y = 70 + Math.random() * (H - TASKBAR - 140);
+    if (curS(x, y) > minS && (!others || others.every(o => Math.hypot(o.x - x, o.y - y) > gap))) return { x, y };
+  }
+  return null;
+}
+function steerDeep(o, dt, i, minAhead, rate) {
+  const ax = o.x + Math.cos(o.h) * 80, ay = o.y + Math.sin(o.h) * 80;
+  const margin = ax < 50 || ay < 50 || ax > W - 50 || ay > H - TASKBAR - 50;
+  if (curS(ax, ay) < minAhead || margin) {
+    let gx = curS(o.x + 10, o.y) - curS(o.x - 10, o.y), gy = curS(o.x, o.y + 10) - curS(o.x, o.y - 10);
+    if (margin) { gx += (W / 2 - o.x) * 0.02; gy += ((H - TASKBAR) / 2 - o.y) * 0.02; }
+    o.h = turnToward(o.h, Math.atan2(gy, gx), rate * dt);
+  } else {
+    o.wander = (o.wander || 0) + dt * 0.3;
+    o.h += (vnoise(o.wander, i * 13 + 5) - 0.5) * 0.3 * dt;
+  }
+}
+function syncSea() {
+  const ns = Math.max(0, Math.min(2, Math.round(P.sharks))), nd = Math.max(0, Math.min(6, Math.round(P.dolphins))), nb = Math.max(0, Math.min(2, Math.round(P.sailboats)));
+  while (sharks.length > ns) sharks.pop();
+  while (sharks.length < ns) sharks.push({ state: 'hide', t: 8 + Math.random() * 20 + sharks.length * 20, x: 0, y: 0, h: 0, v: 24, vis: 0, life: 0, wander: Math.random() * 50 });
+  while (dolphins.length > nd) dolphins.pop();
+  while (dolphins.length < nd) { const i = dolphins.length; dolphins.push({ vis: 0, cd: 1 + Math.random() * 4, jt: -1, x: 0, y: 0, h: 0, w: -1, fo: -20 * Math.ceil(i / 2) - (i ? 8 : 0), lo: i === 0 ? 0 : (i % 2 ? 1 : -1) * (20 + 10 * Math.floor((i - 1) / 2)) }); }
+  while (sails.length > nb) sails.pop();
+  while (sails.length < nb) { const sp = deepSpot(210, sails, 300); if (!sp) break; sails.push({ x: sp.x, y: sp.y, h: Math.random() * 6.28, v: 17, boom: 0.5, wp: null, tack: 1, wander: Math.random() * 50 }); }
+}
+function stepSea(dt, now) {
+  if (sails.length < Math.round(P.sailboats) && Math.random() < dt) syncSea();
+  wind.a += (vnoise(now * 0.00002, 3) - 0.5) * 0.02 * dt;
+  // sharks
+  sharks.forEach((k, i) => {
+    if (k.state === 'hide') {
+      k.vis = Math.max(0, k.vis - dt / 1.2); k.t -= dt;
+      if (k.t <= 0) { const sp = deepSpot(230); if (sp) { k.x = sp.x; k.y = sp.y; k.h = Math.random() * 6.28; k.life = 14 + Math.random() * 10; k.state = 'show'; } else k.t = 10; }
+      return;
+    }
+    k.life -= dt; k.vis = Math.min(1, Math.min(k.vis + dt / 1.6, k.life / 1.6));
+    steerDeep(k, dt, i, 180, 0.6);
+    k.h += Math.sin(now * 0.0011 + i) * 0.12 * dt;
+    k.x += Math.cos(k.h) * k.v * dt; k.y += Math.sin(k.h) * k.v * dt;
+    if (k.life <= 0 || curS(k.x, k.y) < 60) { k.state = 'hide'; k.t = 25 + Math.random() * 45; }
+  });
+  // dolphin pod
+  if (pod.state === 'away') {
+    pod.t -= dt;
+    if (pod.t <= 0 && dolphins.length) { const sp = deepSpot(220); if (sp) { pod.x = sp.x; pod.y = sp.y; pod.h = Math.random() * 6.28; pod.life = 22 + Math.random() * 16; pod.state = 'swim'; } else pod.t = 8; }
+  } else {
+    pod.life -= dt;
+    steerDeep(pod, dt, 99, 190, 0.5);
+    pod.x += Math.cos(pod.h) * pod.v * dt; pod.y += Math.sin(pod.h) * pod.v * dt;
+    if (pod.life <= 0 || curS(pod.x, pod.y) < 70 || !dolphins.length) { pod.state = 'away'; pod.t = 25 + Math.random() * 40; }
+  }
+  const cs = Math.cos(pod.h), sn = Math.sin(pod.h);
+  dolphins.forEach(d => {
+    const target = pod.state === 'swim' ? 1 : 0;
+    d.vis += Math.sign(target - d.vis) * Math.min(Math.abs(target - d.vis), dt / 1.6);
+    let adv = 0;
+    if (d.vis > 0.02 && d.jt < 0) { d.cd -= dt; if (d.cd <= 0) { d.jt = 0; addRipple(pod.x + cs * d.fo - sn * d.lo, pod.y + sn * d.fo + cs * d.lo, 0.55); } }
+    if (d.jt >= 0) {
+      d.jt += dt / 0.95; adv = 30 * Math.min(1, d.jt);
+      if (d.jt >= 1) { addRipple(pod.x + cs * (d.fo + 30) - sn * d.lo, pod.y + sn * (d.fo + 30) + cs * d.lo, 0.7); d.jt = -1; d.cd = 2.5 + Math.random() * 5; adv = 0; }
+    }
+    d.x = pod.x + cs * (d.fo + adv) - sn * d.lo; d.y = pod.y + sn * (d.fo + adv) + cs * d.lo; d.h = pod.h;
+    d.w = d.jt >= 0 ? Math.min(0.999, d.jt) : -d.vis * (0.55 + 0.45 * Math.sin(now * 0.002 + d.fo));
+  });
+  // sailboat
+  sails.forEach((b, i) => {
+    if (!b.wp || Math.hypot(b.wp.x - b.x, b.wp.y - b.y) < 70 || curS(b.wp.x, b.wp.y) < 150) b.wp = deepSpot(210, null, 0);
+    let want = b.wp ? Math.atan2(b.wp.y - b.y, b.wp.x - b.x) : b.h;
+    const upwind = wind.a + Math.PI;                               // direction the wind comes from
+    const rel = wrapA(want - upwind);
+    if (Math.abs(rel) < 0.85) { want = upwind + Math.sign(b.tack || 1) * 0.85; if (Math.random() < dt * 0.03) b.tack = -(b.tack || 1); }
+    b.h = turnToward(b.h, want, 0.35 * dt);
+    const ax = b.x + Math.cos(b.h) * 80, ay = b.y + Math.sin(b.h) * 80;
+    if (curS(ax, ay) < 150 || ax < 50 || ay < 50 || ax > W - 50 || ay > H - TASKBAR - 50) { steerDeep(b, dt, i + 40, 150, 0.7); b.wp = null; }
+    const beta = wrapA(wind.a - b.h);                              // angle of the wind relative to the bow
+    const side = beta >= 0 ? -1 : 1, mag = Math.max(0.14, Math.min(1.25, (Math.PI - Math.abs(beta)) * 0.5));
+    b.boom += (side * mag - b.boom) * Math.min(1, dt * 1.2);
+    const speed = b.v * (0.55 + 0.45 * Math.min(1, Math.abs(Math.sin(beta)) * 1.4));
+    b.x += Math.cos(b.h) * speed * dt; b.y += Math.sin(b.h) * speed * dt;
+    if (curS(b.x, b.y) < 60) { const sp = deepSpot(210, sails, 250); if (sp) { b.x = sp.x; b.y = sp.y; b.wp = null; } }
+  });
+}
+
 const birds = [];
 const turnToward = (h, target, rate) => { let d = target - h; d = Math.atan2(Math.sin(d), Math.cos(d)); return h + Math.sign(d) * Math.min(Math.abs(d), rate); };
 function spawnBird(fromEdge) {
@@ -914,6 +1105,7 @@ function applyLayout(kind) {
   syncKayaks();
   curMix = 0;
   if (!birds.length) syncBirds(false);
+  syncSea();
 }
 
 function resize() {
@@ -928,7 +1120,8 @@ function resize() {
 
 const T0 = performance.now();
 let lastT = 0, fpsEMA = 0, frameN = 0, frameMs = 0;
-const ripBuf = new Float32Array(24), kayBuf = new Float32Array(16), birdBuf = new Float32Array(32);
+const ripBuf = new Float32Array(24), kayBuf = new Float32Array(16), birdBuf = new Float32Array(32), shkBuf = new Float32Array(8), dolBuf = new Float32Array(24), sailBuf = new Float32Array(8);
+let shkN = 0, dolN = 0;
 const px = new Uint8Array(4);
 let paused = false;
 function frame(now) {
@@ -942,6 +1135,7 @@ function frame(now) {
   curMix = e < 0.5 ? 2 * e * e : 1 - Math.pow(-2 * e + 2, 2) / 2;
   stepKayaks(dt, now);
   stepBirds(dt);
+  stepSea(dt, now);
   draw(now);
   if (++frameN % 10 === 0) updateStats();
 }
@@ -952,6 +1146,9 @@ function draw(now) {
  kayaks.forEach((k, i) => kayBuf.set([k.x, k.y, k.h, k.ph], i * 4));
   birdBuf.fill(0);
  birds.forEach((b, i) => birdBuf.set([b.x, b.y, b.h, 0.68 + 0.32 * Math.cos(b.ph)], i * 4));
+  shkBuf.fill(0); shkN = 0; sharks.forEach(k => { if (k.vis > 0.02) shkBuf.set([k.x, k.y, k.h, k.vis], 4 * shkN++); });
+  dolBuf.fill(0); dolN = 0; dolphins.forEach(d => { if (d.vis > 0.02) dolBuf.set([d.x, d.y, d.h, d.w], 4 * dolN++); });
+  sailBuf.fill(0); sails.forEach((b, i) => sailBuf.set([b.x, b.y, b.h, b.boom], i * 4));
 
   const measure = frameN % 20 === 0, t0 = performance.now();
   configureBeachPass(now, PR);
@@ -983,6 +1180,9 @@ function configureBeachPass(now, pass) {
   gl.uniform4fv(U.uKay, kayBuf);
   gl.uniform4fv(U.uRip, ripBuf);
   gl.uniform1f(U.uBirdN, birds.length); gl.uniform4fv(U.uBird, birdBuf);
+  gl.uniform1f(U.uShkN, shkN); gl.uniform4fv(U.uShk, shkBuf);
+  gl.uniform1f(U.uDolN, dolN); gl.uniform4fv(U.uDol, dolBuf);
+  gl.uniform1f(U.uSailN, sails.length); gl.uniform4fv(U.uSail, sailBuf);
 }
 
 const statsEl = document.getElementById('stats');
@@ -1015,6 +1215,7 @@ for (const s of SLIDERS) {
     else if (s.act === 'size') { resize(); refresh(); }
     else if (s.act === 'kayaks') syncKayaks();
     else if (s.act === 'birds') syncBirds();
+    else if (s.act === 'sea') syncSea();
   });
   slidersEl.appendChild(wrap);
 }
@@ -1095,17 +1296,19 @@ requestAnimationFrame(frame);
 
 function applySettings(v) {
   if (typeof v.seed === 'number' && v.seed !== seed) reseed(v.seed);
-  let field = false, kay = false, bird = false;
+  let field = false, kay = false, bird = false, sea = false;
   for (const k in v) {
     if (!SLIDERS.some(s => s.key === k) || typeof v[k] !== typeof P[k] || P[k] === v[k]) continue;
     P[k] = k === 'palms' ? Math.max(0, Math.min(10, Math.round(Number.isFinite(v[k]) ? v[k] : DEFAULTS.palms))) : v[k];
     if (k === 'sigma' || k === 'warp') field = true;
     else if (k === 'kayaks') kay = true;
     else if (k === 'birds') bird = true;
+    else if (k === 'sharks' || k === 'dolphins' || k === 'sailboats') sea = true;
   }
   if (field && FB) refresh();
   if (kay) syncKayaks();
   if (bird) syncBirds();
+  if (sea) syncSea();
 }
 
 function drawGhosts() {
@@ -1122,6 +1325,7 @@ function startHostedMode() {
   icons = [];
   commit(true);
   syncBirds(false);
+  syncSea();
   let first = true;
   const settlePaused = () => {
     if (!paused || !iconsSeen) return;

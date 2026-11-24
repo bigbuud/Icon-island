@@ -160,6 +160,21 @@
           "label": "Seabirds",
           "hint": "Gulls gliding and circling overhead",
           "unit": ""
+        },
+        "sharks": {
+          "label": "Shark fins",
+          "hint": "An occasional shark fin cruising through the deep water; 0 to hide",
+          "unit": ""
+        },
+        "dolphins": {
+          "label": "Dolphins",
+          "hint": "A pod of dolphins that now and then swims by and leaps; 0 to hide",
+          "unit": ""
+        },
+        "sailboats": {
+          "label": "Sailboats",
+          "hint": "Small sailboats tacking across the open sea; 0 to hide",
+          "unit": ""
         }
       }
     },
