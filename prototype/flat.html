@@ -419,7 +419,7 @@ float dolphinSD(vec2 q) {
   float u = clamp((q.x + 2.0) / 19.0, -1.0, 1.0);
   float w = max(4.6 * pow(max(1.0 - u * u, 0.0), 0.65), 1.0 * ss(-12.0, -19.0, q.x));
   float body = max(abs(q.y) - w, abs(q.x + 1.5) - 19.5);
-  float beak = segSD(q, vec2(16.0, 0.0), vec2(23.0, 0.0)) - 1.3;
+  float beak = segSD(q, vec2(16.0, 0.0), vec2(19.2, 0.0)) - 2.0;
   float fluke = min(segSD(q, vec2(-20.0, 0.0), vec2(-25.5, 5.4)), segSD(q, vec2(-20.0, 0.0), vec2(-25.5, -5.4))) - 0.9;
   float flip = segSD(vec2(q.x, abs(q.y)), vec2(8.0, 3.6), vec2(3.5, 8.4)) - 0.8;
   return min(min(body, beak), min(fluke, flip));
@@ -631,12 +631,12 @@ void main() {
     if (dot(dd, dd) > 3200.0) continue;
     if (d.w < 0.0) {
       vec2 q = rot(-d.z) * dd;
-      col = mix(col, col * vec3(0.55, 0.72, 0.80), ss(1.4, -1.4, dolphinSD(q)) * (-d.w) * 0.32);
+      col = mix(col, col * vec3(0.55, 0.72, 0.80), ss(1.4, -1.4, dolphinSD(q / 0.76) * 0.76) * (-d.w) * 0.32);
     } else {
       float lift = sin(3.14159 * d.w);
       vec2 qs = rot(-d.z) * (dd - vec2(9.0, 15.0) * lift);
-      col = mix(col, col * vec3(0.50, 0.66, 0.74), ss(1.4, -1.4, dolphinSD(qs)) * 0.5);
-      float sc = 1.0 + 0.24 * lift;
+      col = mix(col, col * vec3(0.50, 0.66, 0.74), ss(1.4, -1.4, dolphinSD(qs / 0.76) * 0.76) * 0.5);
+      float sc = 0.76 * (1.0 + 0.24 * lift);
       vec2 q = rot(-d.z) * dd / sc;
       float sd = dolphinSD(q) * sc;
       float ay = abs(q.y);
