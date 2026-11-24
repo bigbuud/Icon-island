@@ -458,10 +458,10 @@
         },
         "layout": {
           "label": "Layout",
-          "hint": "The shape of the circuit",
+          "hint": "The shape of the circuit: gentle bends, a twisty karting circuit with hairpins, or an oval",
           "options": [
             "Flowing",
-            "Twisty",
+            "Karting circuit",
             "Oval"
           ]
         },

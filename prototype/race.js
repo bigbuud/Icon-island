@@ -7,7 +7,7 @@
 IconIsland.theme({
   params: {
     vehicle: 0, count: 8, speed: 1, size: 1.1, overtake: 1, pits: 1, smoke: 1, sparks: 1,
-    width: 58, layout: 0, surface: 0, kerbs: 1, racingLine: 1, tyreMarks: 1, gravel: 1, startLine: 1, pitLane: 1,
+    width: 58, layout: 1, surface: 0, kerbs: 1, racingLine: 1, tyreMarks: 1, gravel: 1, startLine: 1, pitLane: 1,
     grandstands: 1, tyreBarriers: 1, barriers: 1, trees: 1, billboards: 1, pond: 1, marshals: 1, stripes: 1,
     pad: 40, backdrop: 0, wall: 1,
     time: 0, clouds: 1, floodlights: 1
@@ -46,18 +46,20 @@ IconIsland.theme({
   _geom(env) {
     const { W, H, P } = env, r = env.rng(this._seed * 7 + 13), Z = this._Z, R = this._zR, hw = P.width / 2, kb = 8, lay = P.layout | 0;
     const m = hw + kb + 24, X0 = m, X1 = W - m, Y0 = m, Y1 = H - TASKBAR - m, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, rx = (X1 - X0) / 2, ry = (Y1 - Y0) / 2;
-    const N = 36, pts = [], hm = [];
-    for (let i = 0; i < 4; i++) hm.push({ a: (lay === 2 ? 0.02 : 0.07) * (1 + (lay === 1 ? 1.2 : 0)) + 0.07 * r() * (lay === 2 ? 0.3 : 1), k: [2, 3, 5, 7][i], p: r() * 6.283 });
+    let N = lay === 1 ? 72 : 40, pts = []; const NA = lay === 1 ? 7 : 4, hm = [];
+    if (lay === 1) [3, 4, 6, 8, 10, 13].forEach(k => hm.push({ a: 0.1 + 0.05 * r(), k, p: r() * 6.283 }));
+    else for (let i = 0; i < 5; i++) hm.push({ a: lay === 2 ? 0.02 + 0.02 * r() : 0.075 + 0.05 * r(), k: [2, 3, 5, 7, 9][i], p: r() * 6.283 });
     const amp = hm.reduce((a, h) => a + h.a, 0), n = lay === 2 ? 3.6 : 2.4;
     for (let i = 0; i < N; i++) {
-      const th = i / N * 6.283 + (lay === 1 ? (r() - 0.5) * 0.12 : 0), c = Math.cos(th), s = Math.sin(th);
+      const th = i / N * 6.283, c = Math.cos(th), s = Math.sin(th);
       let rad = 1; for (const h of hm) rad += h.a * Math.sin(h.k * th + h.p);
-      if (lay === 1) rad += (r() - 0.5) * 0.16;
-      const sc = Math.pow(Math.pow(Math.abs(c), n) + Math.pow(Math.abs(s), n), -1 / n), f = Math.min(1, rad / (1 + amp * 0.45)) * 0.99;
+      const sc = Math.pow(Math.pow(Math.abs(c), n) + Math.pow(Math.abs(s), n), -1 / n), f = Math.min(1, rad / (1 + amp * (lay === 1 ? 0.3 : 0.45))) * 0.99;
       pts.push([cx + rx * c * sc * f, cy + ry * s * sc * f]);
     }
     const need = hw + kb + 16, sep = 2 * (hw + kb) + 16;
-    for (let it = 0; it < 80; it++) {
+    const gp = lay === 1 ? this._gridTrack(env, r, X0, X1, Y0, Y1, 2 * (hw + kb) + 44, need) : null;
+    if (gp) { pts = gp; N = pts.length; }
+    for (let it = 0; it < (gp ? 0 : 80); it++) {
       for (let i = 0; i < N; i++) {
         const p = pts[i], d = Z.ds(p[0], p[1]) - R;
         if (d < need) {
@@ -67,12 +69,12 @@ IconIsland.theme({
         p[0] = Math.max(X0, Math.min(X1, p[0])); p[1] = Math.max(Y0, Math.min(Y1, p[1]));
       }
       for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
-        const cd = Math.min(j - i, N - (j - i)); if (cd < 4) continue;
+        const cd = Math.min(j - i, N - (j - i)); if (cd < NA) continue;
         const a = pts[i], b = pts[j], dx = b[0] - a[0], dy = b[1] - a[1], dd = Math.hypot(dx, dy);
         if (dd < sep && dd > 0.01) { const k = (sep - dd) * 0.22 / dd; a[0] -= dx * k; a[1] -= dy * k; b[0] += dx * k; b[1] += dy * k; }
       }
       const q = pts.map(p => p.slice());
-      for (let i = 0; i < N; i++) { const a = q[(i + N - 1) % N], b = q[(i + 1) % N]; pts[i][0] = q[i][0] * 0.88 + (a[0] + b[0]) * 0.06; pts[i][1] = q[i][1] * 0.88 + (a[1] + b[1]) * 0.06; }
+      for (let i = 0; i < N; i++) { const a = q[(i + N - 1) % N], b = q[(i + 1) % N]; const w0 = lay === 1 ? 0.94 : 0.88, w1 = (1 - w0) / 2; pts[i][0] = q[i][0] * w0 + (a[0] + b[0]) * w1; pts[i][1] = q[i][1] * w0 + (a[1] + b[1]) * w1; }
     }
     // Catmull-Rom spline -> dense polyline -> uniform resampling
     let dense = [];
@@ -154,6 +156,46 @@ IconIsland.theme({
     g.pitLat = i => { const p = g.pit; if (!p) return 0; const a = p.ia - p.ramp, b = p.ib + p.ramp; if (i < a || i > b) return 0; const sm = t => t * t * (3 - 2 * t); let t = 1; if (i < p.ia) t = sm((i - a) / p.ramp); else if (i > p.ib) t = sm((b - i) / p.ramp); return p.side * p.d1 * t; };
     this._L0 = this._L0 || L;
   },
+  // Karting-style circuit: a random spanning tree over coarse blocks of free ground; the lap runs around the outline of that tree
+  // (a Hamiltonian cycle over the fine cells), which gives hairpins, chicanes and switchbacks that fill the free screen area.
+  _gridTrack(env, r, X0, X1, Y0, Y1, c, need) {
+    const Z = this._Z, R = this._zR;
+    let nx = Math.floor((X1 - X0) / c) + 1, ny = Math.floor((Y1 - Y0) / c) + 1; nx -= nx % 2; ny -= ny % 2;
+    if (nx < 4 || ny < 2) return null;
+    const sx = (X1 - X0) / (nx - 1), sy = (Y1 - Y0) / (ny - 1), px = i => X0 + i * sx, py = j => Y0 + j * sy;
+    const free = (x, y) => Z.ds(x, y) - R >= need;
+    const bx = nx / 2, by = ny / 2, ok = new Array(bx * by).fill(false);
+    for (let j = 0; j < by; j++) for (let i = 0; i < bx; i++) {
+      const x0 = px(2 * i), x1 = px(2 * i + 1), y0 = py(2 * j), y1 = py(2 * j + 1); let good = true;
+      for (const [x, y] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1], [(x0 + x1) / 2, y0], [(x0 + x1) / 2, y1], [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2]]) if (!free(x, y)) { good = false; break; }
+      ok[j * bx + i] = good;
+    }
+    // largest connected component
+    const comp = new Array(bx * by).fill(-1); let best = [], cid = 0;
+    for (let k = 0; k < bx * by; k++) {
+      if (!ok[k] || comp[k] >= 0) continue; const q = [k], list = []; comp[k] = cid;
+      while (q.length) { const a = q.pop(); list.push(a); const ai = a % bx, aj = (a / bx) | 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i = ai + di, j = aj + dj; if (i < 0 || j < 0 || i >= bx || j >= by) continue; const b = j * bx + i; if (ok[b] && comp[b] < 0) { comp[b] = cid; q.push(b); } } }
+      if (list.length > best.length) best = list; cid++;
+    }
+    if (best.length < 4) return null;
+    // randomised Prim spanning tree
+    const inT = new Set([best[Math.floor(r() * best.length)]]), edges = [], front = [], addF = a => { const ai = a % bx, aj = (a / bx) | 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i = ai + di, j = aj + dj; if (i < 0 || j < 0 || i >= bx || j >= by) continue; const b = j * bx + i; if (ok[b] && comp[b] === comp[a]) front.push([a, b]); } };
+    addF([...inT][0]);
+    while (front.length) {
+      const k = Math.floor(r() * front.length), [a, b] = front[k]; front[k] = front[front.length - 1]; front.pop();
+      if (inT.has(b)) continue; inT.add(b); edges.push([a, b]); addF(b);
+    }
+    // fine-cell cycle
+    const id = (fx, fy) => fy * nx + fx, adj = new Map(), link = (a, b) => { (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+    const open = new Set(); for (const [a, b] of edges) { const ai = a % bx, aj = (a / bx) | 0, bi = b % bx, bj = (b / bx) | 0; if (bi === ai + 1) { open.add(a + 'R'); open.add(b + 'L'); link(id(2 * ai + 1, 2 * aj), id(2 * bi, 2 * bj)); link(id(2 * ai + 1, 2 * aj + 1), id(2 * bi, 2 * bj + 1)); } else if (bi === ai - 1) { open.add(a + 'L'); open.add(b + 'R'); link(id(2 * bi + 1, 2 * bj), id(2 * ai, 2 * aj)); link(id(2 * bi + 1, 2 * bj + 1), id(2 * ai, 2 * aj + 1)); } else if (bj === aj + 1) { open.add(a + 'D'); open.add(b + 'U'); link(id(2 * ai, 2 * aj + 1), id(2 * bi, 2 * bj)); link(id(2 * ai + 1, 2 * aj + 1), id(2 * bi + 1, 2 * bj)); } else { open.add(a + 'U'); open.add(b + 'D'); link(id(2 * bi, 2 * bj + 1), id(2 * ai, 2 * aj)); link(id(2 * bi + 1, 2 * bj + 1), id(2 * ai + 1, 2 * aj)); } }
+    for (const k of best) { const i = k % bx, j = (k / bx) | 0, f = (a, b) => id(2 * i + a, 2 * j + b);
+      if (!open.has(k + 'U')) link(f(0, 0), f(1, 0)); if (!open.has(k + 'R')) link(f(1, 0), f(1, 1)); if (!open.has(k + 'D')) link(f(0, 1), f(1, 1)); if (!open.has(k + 'L')) link(f(0, 0), f(0, 1)); }
+    const start = id(2 * (best[0] % bx), 2 * ((best[0] / bx) | 0)), cyc = [start]; let prev = -1, cur = start;
+    for (let n = 0; n < best.length * 4 + 2; n++) { const a = adj.get(cur); if (!a || a.length !== 2) return null; const nx2 = a[0] === prev ? a[1] : a[0]; if (nx2 === start) break; cyc.push(nx2); prev = cur; cur = nx2; }
+    if (cyc.length !== best.length * 4) return null;
+    const jit = Math.min(sx, sy) * 0.07;
+    return cyc.map(k => [px(k % nx) + (r() - 0.5) * jit, py((k / nx) | 0) + (r() - 0.5) * jit]);
+  },
   _td(x, y) { const g = this._g, i = Math.floor(x / g.cell), j = Math.floor(y / g.cell); return i < 0 || j < 0 || i >= g.gw || j >= g.gh ? 1e4 : g.Dt[j * g.gw + i]; },
   _ok(env, x, y, m, d) { return x > m && x < env.W - m && y > m && y < env.H - TASKBAR - m && this._Z.ds(x, y) - this._zR > m * 0.6 && this._td(x, y) > d - 4; },
   _off(a, b, d) { const g = this._g, M = g.M, out = []; for (let i = a; i <= b; i++) { const k = ((i % M) + M) % M, dd = typeof d === 'function' ? d(i) : d; out.push([g.x[k] + g.nx[k] * dd, g.y[k] + g.ny[k] * dd]); } return out; },
@@ -212,11 +254,12 @@ IconIsland.theme({
       c.restore();
     }
     // pond (needs a free open spot)
+    let pondBox = null;
     if (P.pond) {
       let bp = null, bd = 70;
       for (let n = 0; n < 160; n++) { const x = 60 + rr() * (W - 120), y = 60 + rr() * (H - TASKBAR - 120), d = Math.min(this._td(x, y) - hw - kb, Z.ds(x, y) - R, x - 20, W - 20 - x, H - TASKBAR - 20 - y); if (d > bd) { bd = d; bp = [x, y]; } }
       if (bp) {
-        const rx0 = Math.min(bd * 0.8, 120), ry0 = rx0 * (0.55 + rr() * 0.2), pts = [], ph = rr() * 6.28;
+        const rx0 = Math.min(bd * 0.8, 120), ry0 = rx0 * (0.55 + rr() * 0.2), pts = []; pondBox = [bp[0], bp[1], rx0 * 1.25], ph = rr() * 6.28;
         for (let i = 0; i < 28; i++) { const a = i / 28 * 6.283, k = 1 + 0.12 * Math.sin(3 * a + ph) + 0.07 * Math.sin(5 * a + ph * 2); pts.push([bp[0] + Math.cos(a) * rx0 * k, bp[1] + Math.sin(a) * ry0 * k]); }
         this._path(c, pts, true); c.fillStyle = '#c7d6a0'; c.shadowColor = 'rgba(0,0,0,0)'; c.lineWidth = 9; c.strokeStyle = '#bccf8c'; c.stroke(); c.fill();
         c.save(); this._path(c, pts, true); c.clip(); const wg = c.createLinearGradient(bp[0] - rx0, bp[1] - ry0, bp[0] + rx0, bp[1] + ry0); wg.addColorStop(0, '#62b4d2'); wg.addColorStop(1, '#2d7ba6'); c.fillStyle = wg; c.fillRect(bp[0] - rx0 - 12, bp[1] - ry0 - 12, rx0 * 2 + 24, ry0 * 2 + 24);
@@ -332,7 +375,7 @@ IconIsland.theme({
       const want = Math.round(70 * P.trees * (W * (H - TASKBAR)) / (1920 * 1080)), placed = [];
       for (let n = 0; n < want * 14 && placed.length < want; n++) {
         const x = 12 + rr() * (W - 24), y = 12 + rr() * (H - TASKBAR - 24), r0 = 9 + rr() * 9, kind = rr() < 0.65 ? 0 : 1;
-        if (this._td(x, y) < hw + kb + r0 + 34 || Z.ds(x, y) - R < r0 + 10) continue; let hit = false; for (const q of placed) if (Math.hypot(q[0] - x, q[1] - y) < (q[2] + r0) * 0.9 + 3) { hit = true; break; } if (hit) continue;
+        if ((pondBox && Math.hypot(x - pondBox[0], y - pondBox[1]) < pondBox[2] + r0) || this._td(x, y) < hw + kb + r0 + 34 || Z.ds(x, y) - R < r0 + 10) continue; let hit = false; for (const q of placed) if (Math.hypot(q[0] - x, q[1] - y) < (q[2] + r0) * 0.9 + 3) { hit = true; break; } if (hit) continue;
         if (g.stand && g.stand.a) { /* keep clear of the stand */ } placed.push([x, y, r0, kind]);
       }
       placed.sort((a, b) => a[1] - b[1]); for (const q of placed) this._tree(c, q[0], q[1], q[2], q[3], rr);

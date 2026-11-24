@@ -558,7 +558,7 @@
       "page": "race.html",
       "status": "ready",
       "product": "free",
-      "thumb": "url(thumbs/race.webp?v=1) center / cover no-repeat, linear-gradient(160deg,#5d9a42,#3b3e44)",
+      "thumb": "url(thumbs/race.webp?v=2) center / cover no-repeat, linear-gradient(160deg,#5d9a42,#3b3e44)",
       "thumbSource": "custom",
       "groups": [
         {
@@ -663,13 +663,13 @@
             {
               "key": "layout",
               "label": "Layout",
-              "hint": "The shape of the circuit",
+              "hint": "The shape of the circuit: gentle bends, a twisty karting circuit with hairpins, or an oval",
               "options": [
                 "Flowing",
-                "Twisty",
+                "Karting circuit",
                 "Oval"
               ],
-              "default": 0
+              "default": 1
             },
             {
               "key": "surface",
